@@ -1,9 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/sync-emails",
-      "schedule": "0 * * * *"
+      "path": "/api/cron/status-transition",
+      "schedule": "0 9 * * *"
     }
   ]
 }
-
