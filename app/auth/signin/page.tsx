@@ -1,0 +1,86 @@
+import { signIn } from "@/auth";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Suspense } from "react";
+
+function SignInForm({ searchParams }: { searchParams: { error?: string } }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f7f7f5]">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">Luminary</CardTitle>
+          <CardDescription>
+            AI 기반 이메일 관리 및 통합 일정 관리 시스템에 로그인하세요
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {searchParams?.error === "OAuthAccountNotLinked" && (
+            <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-4 space-y-2">
+              <p className="text-sm font-semibold text-yellow-800">
+                계정 연결 오류가 발생했습니다.
+              </p>
+              <div className="text-xs text-yellow-700 space-y-1">
+                <p className="font-semibold">해결 방법:</p>
+                <ol className="list-decimal list-inside space-y-1 ml-2">
+                  <li>Google 계정 설정에서 이 앱의 권한을 취소하세요:
+                    <br />
+                    <a 
+                      href="https://myaccount.google.com/permissions" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline"
+                    >
+                      https://myaccount.google.com/permissions
+                    </a>
+                  </li>
+                  <li>브라우저 캐시 및 쿠키 삭제 (F12 → Application → Cookies → localhost:3000 삭제)</li>
+                  <li>시크릿 모드에서 다시 시도</li>
+                </ol>
+              </div>
+            </div>
+          )}
+          {searchParams?.error && searchParams.error !== "OAuthAccountNotLinked" && (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-4 space-y-2">
+              <p className="text-sm font-semibold text-red-800">
+                로그인 중 오류가 발생했습니다: {searchParams.error}
+              </p>
+              <div className="text-xs text-red-700 space-y-1">
+                <p className="font-semibold">다음 사항을 확인해주세요:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Google Cloud Console에서 <strong>승인된 리디렉션 URI</strong>에 <code className="bg-red-100 px-1 rounded">http://localhost:3000/api/auth/callback/google</code>가 정확히 등록되어 있는지 확인</li>
+                  <li>OAuth 동의 화면의 <strong>테스트 사용자</strong>에 로그인하려는 Google 이메일이 등록되어 있는지 확인</li>
+                  <li>OAuth 동의 화면의 <strong>범위(Scopes)</strong>에 필요한 권한이 모두 등록되어 있는지 확인</li>
+                  <li>브라우저 캐시 및 쿠키 삭제 후 다시 시도 (또는 시크릿 모드 사용)</li>
+                  <li>개발 서버를 재시작했는지 확인</li>
+                </ul>
+              </div>
+            </div>
+          )}
+          <form
+            action={async () => {
+              "use server";
+              await signIn("google", { redirectTo: "/inbox" });
+            }}
+          >
+            <Button type="submit" className="w-full" size="lg">
+              Google로 로그인
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default function SignInPage({
+  searchParams,
+}: {
+  searchParams: { error?: string };
+}) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignInForm searchParams={searchParams} />
+    </Suspense>
+  );
+}
+

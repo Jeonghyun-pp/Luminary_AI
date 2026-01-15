@@ -1,0 +1,43 @@
+{
+  "name": "inbox-solution",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "firebase": "^12.6.0",
+    "firebase-admin": "^13.6.0",
+    "googleapis": "^144.0.0",
+    "isomorphic-dompurify": "^2.33.0",
+    "lucide-react": "^0.427.0",
+    "next": "^14.2.0",
+    "next-auth": "^5.0.0-beta.25",
+    "openai": "^4.47.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "tailwind-merge": "^2.5.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.19",
+    "dotenv": "^17.2.3",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.5.0"
+  }
+}
