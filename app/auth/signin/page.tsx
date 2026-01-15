@@ -47,7 +47,7 @@ function SignInForm({ searchParams }: { searchParams: { error?: string } }) {
               <div className="text-xs text-red-700 space-y-1">
                 <p className="font-semibold">다음 사항을 확인해주세요:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li>Google Cloud Console에서 <strong>승인된 리디렉션 URI</strong>에 <code className="bg-red-100 px-1 rounded">http://localhost:3000/api/auth/callback/google</code>가 정확히 등록되어 있는지 확인</li>
+                  <li>Google Cloud Console에서 <strong>승인된 리디렉션 URI</strong>에 <code className="bg-red-100 px-1 rounded">https://luminary-ai-rust.vercel.app/api/auth/callback/google</code>가 정확히 등록되어 있는지 확인</li>
                   <li>OAuth 동의 화면의 <strong>테스트 사용자</strong>에 로그인하려는 Google 이메일이 등록되어 있는지 확인</li>
                   <li>OAuth 동의 화면의 <strong>범위(Scopes)</strong>에 필요한 권한이 모두 등록되어 있는지 확인</li>
                   <li>브라우저 캐시 및 쿠키 삭제 후 다시 시도 (또는 시크릿 모드 사용)</li>
