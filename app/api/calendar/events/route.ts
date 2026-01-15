@@ -11,6 +11,8 @@ const calendarEventsQuerySchema = z.object({
   maxResults: z.string().regex(/^\d+$/).transform(Number).default("50"),
 });
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withErrorHandler(async (request: Request) => {
   const user = await getCurrentUser();
   const { searchParams } = new URL(request.url);

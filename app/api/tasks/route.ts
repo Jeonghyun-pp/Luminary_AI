@@ -11,6 +11,8 @@ import { NotFoundError } from "@/lib/errors/handler";
 import { FieldValue, Query } from "firebase-admin/firestore";
 import { addTaskToCalendar } from "@/lib/calendar-helper";
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withErrorHandler(async (request: Request) => {
   const user = await getCurrentUser();
   const { searchParams } = new URL(request.url);

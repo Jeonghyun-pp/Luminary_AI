@@ -8,6 +8,8 @@ import { parseRuleFromNaturalLanguageTool } from "@/lib/agent/parse-rule";
 import { createRuleSchema } from "@/lib/validations/rule";
 import { withErrorHandler } from "@/lib/errors/handler";
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withErrorHandler(async () => {
   const user = await getCurrentUser();
   const { id: actualUserId, ref: userRef } = await resolveUserDocument(user.id);
