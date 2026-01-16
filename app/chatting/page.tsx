@@ -712,8 +712,8 @@ export default function ChattingPage() {
                         disabled={leavingThreads.size > 0}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
                       >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        선택 삭제 ({selectedThreadIds.size})
+                        <LogOut className="h-4 w-4 mr-1" />
+                        나가기 ({selectedThreadIds.size})
                       </Button>
                     )}
                   </>
