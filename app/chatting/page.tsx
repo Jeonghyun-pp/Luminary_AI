@@ -239,9 +239,22 @@ export default function ChattingPage() {
       const res = await fetch("/api/chatting/threads");
       const data = await res.json();
       if (data.success) {
-        setThreads(data.threads || []);
-        if (data.threads && data.threads.length > 0 && !selectedThread) {
-          setSelectedThread(data.threads[0]);
+        const newThreads = data.threads || [];
+        setThreads(newThreads);
+        
+        // Only auto-select first thread if no thread is currently selected
+        if (newThreads.length > 0 && !selectedThread) {
+          setSelectedThread(newThreads[0]);
+        } else if (selectedThread) {
+          // Update selectedThread with latest data if it still exists
+          const updatedThread = newThreads.find((t: ChatThread) => t.emailId === selectedThread.emailId);
+          if (updatedThread) {
+            // Update selectedThread with latest data (especially unreadCount)
+            setSelectedThread(updatedThread);
+          } else {
+            // Selected thread no longer exists, clear selection
+            setSelectedThread(null);
+          }
         }
       }
     } catch (error) {
