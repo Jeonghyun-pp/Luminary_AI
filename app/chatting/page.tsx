@@ -650,7 +650,6 @@ export default function ChattingPage() {
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
-                채팅
               </h2>
               <div className="flex items-center gap-2 ml-4">
                 {!isSelectionMode && (
