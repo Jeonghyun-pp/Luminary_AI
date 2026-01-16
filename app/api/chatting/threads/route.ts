@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
       emailId: string;
       threadId: string | null;
       subject: string;
+      subjectSummary?: string; // 제목 요약
       from: string;
       fromEmail: string;
       lastMessageAt: Date;
@@ -53,6 +54,7 @@ export async function GET(request: NextRequest) {
         
         let threadId: string | null = null;
         let subject: string = "";
+        let subjectSummary: string | undefined = undefined;
         let from: string = "";
         let fromEmail: string = "";
 
@@ -62,6 +64,7 @@ export async function GET(request: NextRequest) {
           if (email) {
             threadId = email.threadId || reply.threadId || null;
             subject = email.subject || reply.subject || "";
+            subjectSummary = email.subjectSummary || undefined;
             from = email.from || "";
             fromEmail = email.from.includes("<")
               ? email.from.split("<")[1].split(">")[0]
@@ -89,6 +92,7 @@ export async function GET(request: NextRequest) {
           emailId: emailId,
           threadId: threadId,
           subject: subject,
+          subjectSummary: subjectSummary,
           from: from,
           fromEmail: fromEmail,
           lastMessageAt: reply.sentAt?.toDate?.() || new Date(reply.sentAt),

@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserEmailCollectionRefFromResolved, getUserSubcollectionRefFromResolved } from "@/lib/firebase";
 import { sendGmailReply, markThreadAsRead } from "@/lib/gmail";
 import { FieldValue } from "firebase-admin/firestore";
+import { openai } from "@/lib/openai";
 
 export async function POST(
   request: NextRequest,
@@ -100,6 +101,40 @@ export async function POST(
       } catch (error: any) {
         console.error(`[Reply Email] Failed to mark thread as read:`, error);
         // Don't fail the request if marking as read fails
+      }
+    }
+
+    // Generate and save subject summary if not already exists
+    if (!email.subjectSummary && email.subject) {
+      try {
+        const titleResponse = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            { 
+              role: "system", 
+              content: "You are a title summarization assistant. Summarize the given email subject into a concise, clear summary. Maximum 50 characters in Korean. Remove unnecessary words like 'Re:', 'Fwd:', etc. Keep only the essential information." 
+            },
+            { 
+              role: "user", 
+              content: `Summarize this email subject into a concise summary:\n\n${email.subject}` 
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 50,
+        });
+        
+        const summarized = titleResponse.choices[0].message.content?.trim();
+        if (summarized) {
+          // Update email document with subject summary
+          await inboxCollection.doc(emailId).update({
+            subjectSummary: summarized,
+            updatedAt: FieldValue.serverTimestamp(),
+          });
+          console.log(`[Reply Email] Saved subject summary for email ${emailId}: ${summarized}`);
+        }
+      } catch (error: any) {
+        console.error(`[Reply Email] Failed to generate subject summary:`, error);
+        // Don't fail the request if summarization fails
       }
     }
 

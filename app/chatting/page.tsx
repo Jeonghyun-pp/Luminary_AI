@@ -15,6 +15,7 @@ interface ChatThread {
   emailId: string;
   threadId: string | null;
   subject: string;
+  subjectSummary?: string; // 제목 요약
   from: string;
   fromEmail: string;
   lastMessageAt: Date;
@@ -72,7 +73,7 @@ export default function ChattingPage() {
   const selectedThreadRef = useRef<ChatThread | null>(null); // Always keep latest selectedThread
 
   useEffect(() => {
-    loadThreads();
+    loadThreads(true); // Use cache on initial load
     loadTemplates();
     
     // Check for new messages in background every 5 seconds
@@ -84,7 +85,7 @@ export default function ChattingPage() {
             const data = await res.json();
             if (data.success && data.hasUpdates) {
               console.log(`[Chatting] New messages detected in ${data.emailIdsWithNewMessages.length} thread(s), reloading list...`);
-              loadThreads(); // Only reload if there are updates
+              loadThreads(false); // Don't use cache when there are updates
             }
           }
         })
@@ -158,7 +159,7 @@ export default function ChattingPage() {
             console.log("[Chatting] Thread marked as read successfully");
             // Only reload threads if unread count changed (avoid unnecessary refresh)
             if (selectedThread.unreadCount > 0) {
-              loadThreads();
+              loadThreads(false); // Don't use cache when unread count changes
             }
           } else {
             console.error("[Chatting] Failed to mark thread as read:", data.error);
@@ -251,16 +252,69 @@ export default function ChattingPage() {
     previousMessageCountRef.current = messages.length;
   }, [messages]);
 
-  const loadThreads = async () => {
+  const loadThreads = async (useCache: boolean = true) => {
     // Use ref to get the latest selectedThread (avoid closure issues)
     const currentSelectedThread = selectedThreadRef.current;
     const currentSelectedEmailId = currentSelectedThread?.emailId;
+    
+    // Try to load from cache first
+    if (useCache && typeof window !== 'undefined') {
+      try {
+        const cacheKey = 'chatting_threads_cache';
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          const cacheAge = Date.now() - timestamp;
+          const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+          
+          if (cacheAge < CACHE_EXPIRY && data.threads) {
+            console.log("[Chatting] Loading from cache:", data.threads.length, "threads");
+            const cachedThreads = data.threads || [];
+            setThreads(cachedThreads);
+            
+            // Preserve selection
+            if (cachedThreads.length > 0 && !currentSelectedEmailId) {
+              const firstThread = cachedThreads[0];
+              setSelectedThread(firstThread);
+              selectedThreadRef.current = firstThread;
+            } else if (currentSelectedEmailId) {
+              const updatedThread = cachedThreads.find((t: ChatThread) => t.emailId === currentSelectedEmailId);
+              if (updatedThread) {
+                setSelectedThread(updatedThread);
+                selectedThreadRef.current = updatedThread;
+              } else {
+                setSelectedThread(null);
+                selectedThreadRef.current = null;
+              }
+            }
+            
+            // Continue to fetch fresh data in background
+          }
+        }
+      } catch (error) {
+        console.error("[Chatting] Failed to load from cache:", error);
+      }
+    }
     
     try {
       const res = await fetch("/api/chatting/threads");
       const data = await res.json();
       if (data.success) {
         const newThreads = data.threads || [];
+        
+        // Save to cache
+        if (typeof window !== 'undefined') {
+          try {
+            const cacheKey = 'chatting_threads_cache';
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+              data: { threads: newThreads },
+              timestamp: Date.now()
+            }));
+          } catch (error) {
+            console.error("[Chatting] Failed to save to cache:", error);
+          }
+        }
+        
         setThreads(newThreads);
         
         // Only auto-select first thread if no thread is currently selected
@@ -507,7 +561,7 @@ export default function ChattingPage() {
         // Reload messages to show the sent message (without loading indicator)
         await loadMessages(selectedThread.emailId, false);
         // Reload threads immediately to update unread count
-        await loadThreads();
+        await loadThreads(false); // Don't use cache after sending message
       } else {
         const error = await res.json();
         if (error.requiresReauth) {
@@ -656,7 +710,7 @@ export default function ChattingPage() {
         setTaskAnalysis(null);
         setEditingTask({ title: "", content: "", product: "", requirements: "", reward: "", schedule: "", dueAt: "" });
         // 자동으로 threads 목록 새로고침 및 협업중 필터 활성화
-        await loadThreads();
+        await loadThreads(false); // Don't use cache after creating task
         setTaskFilter("tasks");
       } else {
         const error = await res.json();
@@ -706,7 +760,7 @@ export default function ChattingPage() {
       if (deleteRes.ok) {
         toast.success("작업이 취소되었습니다.");
         // 자동으로 threads 목록 새로고침
-        await loadThreads();
+        await loadThreads(false); // Don't use cache after canceling task
       } else {
         const error = await deleteRes.json();
         toast.error(error.error || "작업 취소 실패");
@@ -863,10 +917,10 @@ export default function ChattingPage() {
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="font-medium text-sm truncate">
-                              {getFromName(thread.from)}
+                              {thread.subjectSummary || thread.subject}
                             </div>
                             <div className="text-xs text-gray-500 truncate mt-1">
-                              {thread.subject}
+                              {getFromName(thread.from)}
                             </div>
                             <div className="text-xs text-gray-400 mt-1">
                               {format(new Date(thread.lastMessageAt), "MM월 dd일 HH:mm", { locale: ko })}

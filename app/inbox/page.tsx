@@ -527,7 +527,42 @@ export default function InboxPage() {
   }, []);
 
   const loadEmails = useCallback(
-    async (queryOverride?: string, preserveSelection: boolean = true) => {
+    async (queryOverride?: string, preserveSelection: boolean = true, useCache: boolean = true) => {
+      // Try to load from cache first
+      if (useCache && typeof window !== 'undefined') {
+        try {
+          const cacheKey = 'inbox_cache';
+          const cached = sessionStorage.getItem(cacheKey);
+          if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            const cacheAge = Date.now() - timestamp;
+            const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+            
+            if (cacheAge < CACHE_EXPIRY && data.emails) {
+              console.log("[Inbox] Loading from cache:", data.emails.length, "emails");
+              setAllEmails(data.emails);
+              
+              // Preserve selection if available
+              if (preserveSelection && data.emails.length > 0) {
+                setSelectedEmail((current) => {
+                  if (current) {
+                    const stillInList = data.emails.find((e: Email) => e.id === current.id);
+                    if (stillInList) return stillInList;
+                  }
+                  return data.emails[0];
+                });
+              } else if (!preserveSelection && data.emails.length > 0) {
+                setSelectedEmail(data.emails[0]);
+              }
+              
+              // Continue to fetch fresh data in background
+            }
+          }
+        } catch (error) {
+          console.error("[Inbox] Failed to load from cache:", error);
+        }
+      }
+      
       setLoading(true);
       try {
         const url = `/api/emails`;
@@ -549,6 +584,19 @@ export default function InboxPage() {
         
         const data = await res.json();
         console.log("[Inbox] Received emails:", data.emails?.length || 0);
+        
+        // Save to cache
+        if (typeof window !== 'undefined') {
+          try {
+            const cacheKey = 'inbox_cache';
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+              data: { emails: data.emails || [] },
+              timestamp: Date.now()
+            }));
+          } catch (error) {
+            console.error("[Inbox] Failed to save to cache:", error);
+          }
+        }
         
         let filteredEmails = data.emails || [];
         const effectiveQuery = (queryOverride ?? appliedSearchQuery).trim();
