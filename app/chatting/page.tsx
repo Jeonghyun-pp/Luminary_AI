@@ -88,8 +88,14 @@ export default function ChattingPage() {
       previousEmailIdRef.current = selectedThread.emailId;
       previousMessageCountRef.current = 0; // Reset when switching threads
       
-      // Load messages without loading indicator
-      loadMessages(selectedThread.emailId, false);
+      // Show loading immediately when switching threads
+      if (isNewThread) {
+        setMessagesLoading(true);
+        setMessages([]); // Clear previous messages immediately
+      }
+      
+      // Load messages with loading indicator when switching threads
+      loadMessages(selectedThread.emailId, isNewThread);
       
       // Mark thread as read when opening (always, not just when unreadCount > 0)
       fetch(`/api/chatting/threads/${selectedThread.emailId}/mark-read`, {
@@ -349,14 +355,22 @@ export default function ChattingPage() {
       setMessagesLoading(true);
     }
     try {
-      const res = await fetch(`/api/chatting/threads/${emailId}/messages?source=gmail`);
+      // Load messages from Firebase (fast - only queries one emailId's replies)
+      const res = await fetch(`/api/chatting/threads/${emailId}/messages`);
       const data = await res.json();
       if (data.success) {
         setMessages(data.messages || []);
+        // Hide loading after messages are loaded
+        if (showLoading) {
+          setMessagesLoading(false);
+        }
+      } else {
+        if (showLoading) {
+          setMessagesLoading(false);
+        }
       }
     } catch (error) {
       console.error("Failed to load messages:", error);
-    } finally {
       if (showLoading) {
         setMessagesLoading(false);
       }
@@ -948,7 +962,14 @@ export default function ChattingPage() {
                 ref={messagesContainerRef}
                 className="flex-1 overflow-y-auto p-4 space-y-4"
               >
-                {messages.length === 0 ? (
+                {messagesLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                      <div className="text-gray-500 text-sm">메시지를 불러오는 중...</div>
+                    </div>
+                  </div>
+                ) : messages.length === 0 ? (
                   <div className="text-center text-gray-500 text-sm">메시지가 없습니다</div>
                 ) : (
                   messages.map((message) => (
