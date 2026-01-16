@@ -112,11 +112,19 @@ export async function POST(
           messages: [
             { 
               role: "system", 
-              content: "You are a title summarization assistant. Summarize the given email subject into a concise, clear summary. Maximum 50 characters in Korean. Remove unnecessary words like 'Re:', 'Fwd:', etc. Keep only the essential information." 
+              content: `You are a title summarization assistant. Summarize the given email subject into a concise, clear summary. Maximum 50 characters in Korean.
+
+Remove the following:
+- Email prefixes like 'Re:', 'Fwd:', 'RE:', 'FWD:'
+- Tags in brackets like '[광고제안]', '[협찬]', '[제안]', '[광고]', '[협업]', '[스폰서]', etc.
+- Honorifics and titles like '님', '선생님', '인플루언서님', '유튜버님', '블로거님', etc.
+- Unnecessary greetings or formalities
+
+Keep only the essential information about the product, collaboration type, or main topic.` 
             },
             { 
               role: "user", 
-              content: `Summarize this email subject into a concise summary:\n\n${email.subject}` 
+              content: `Summarize this email subject into a concise summary (remove tags, honorifics, and unnecessary words):\n\n${email.subject}` 
             },
           ],
           temperature: 0.3,
