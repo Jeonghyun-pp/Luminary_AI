@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale/ko";
-import { MessageSquare, Send, CheckSquare2, Calendar, LogOut, Trash2, Filter, XCircle, Check } from "lucide-react";
+import { MessageSquare, Send, CheckSquare2, Calendar, LogOut, Trash2, Filter, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,8 +72,8 @@ export default function ChattingPage() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [leavingThreads, setLeavingThreads] = useState<Set<string>>(new Set());
   const [taskFilter, setTaskFilter] = useState<"all" | "tasks" | "no-tasks">("all"); // "all" = all, "tasks" = tasks only, "no-tasks" = no tasks only
-  const [repliedFilter, setRepliedFilter] = useState<boolean>(false); // false = all, true = replied only
   const selectedThreadRef = useRef<ChatThread | null>(null); // Always keep latest selectedThread
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     loadThreads(true); // Use cache on initial load
@@ -319,6 +320,21 @@ export default function ChattingPage() {
         
         setThreads(newThreads);
         
+        // Check if emailId is in URL params (from inbox "채팅으로 이동" button)
+        const emailIdFromUrl = searchParams?.get('emailId');
+        if (emailIdFromUrl) {
+          const threadFromUrl = newThreads.find((t: ChatThread) => t.emailId === emailIdFromUrl);
+          if (threadFromUrl) {
+            setSelectedThread(threadFromUrl);
+            selectedThreadRef.current = threadFromUrl;
+            // Clear URL param after selecting
+            if (typeof window !== 'undefined') {
+              window.history.replaceState({}, '', '/chatting');
+            }
+            return; // Don't auto-select first thread
+          }
+        }
+        
         // Only auto-select first thread if no thread is currently selected
         if (newThreads.length > 0 && !currentSelectedEmailId) {
           const firstThread = newThreads[0];
@@ -343,7 +359,7 @@ export default function ChattingPage() {
     }
   };
 
-  // Filter threads based on taskFilter and repliedFilter
+  // Filter threads based on taskFilter
   const displayedThreads = (() => {
     let filtered = threads;
     
@@ -352,11 +368,6 @@ export default function ChattingPage() {
       filtered = filtered.filter((thread) => thread.hasTask);
     } else if (taskFilter === "no-tasks") {
       filtered = filtered.filter((thread) => !thread.hasTask);
-    }
-    
-    // Apply replied filter
-    if (repliedFilter) {
-      filtered = filtered.filter((thread) => thread.hasReplied);
     }
     
     return filtered;
@@ -851,19 +862,6 @@ export default function ChattingPage() {
                       taskFilter === "all" && "text-gray-400"
                     )} />
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setRepliedFilter(!repliedFilter)}
-                    className={cn(
-                      "h-8 px-3 text-sm font-medium",
-                      repliedFilter && "bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100",
-                      !repliedFilter && "hover:bg-gray-50"
-                    )}
-                    title={repliedFilter ? "모든 채팅방 보기" : "회신한 채팅방만 보기"}
-                  >
-                    {repliedFilter ? "회신함" : "전체"}
-                  </Button>
                   </>
                 )}
                 {isSelectionMode ? (
@@ -907,9 +905,7 @@ export default function ChattingPage() {
               </div>
             </div>
             <p className="text-sm text-gray-500 mt-1">
-              {repliedFilter
-                ? `회신한 채팅방 ${displayedThreads.length}개`
-                : taskFilter === "tasks"
+              {taskFilter === "tasks"
                 ? `Task로 넘긴 채팅방 ${displayedThreads.length}개`
                 : taskFilter === "no-tasks"
                 ? `Task로 넘기지 않은 채팅방 ${displayedThreads.length}개`
@@ -963,15 +959,8 @@ export default function ChattingPage() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <div className="font-medium text-sm truncate">
-                                {thread.subjectSummary || thread.subject}
-                              </div>
-                              {thread.hasReplied && (
-                                <div title="회신한 채팅방">
-                                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                                </div>
-                              )}
+                            <div className="font-medium text-sm truncate">
+                              {thread.subjectSummary || thread.subject}
                             </div>
                             <div className="text-xs text-gray-500 truncate mt-1">
                               {getFromName(thread.from)}

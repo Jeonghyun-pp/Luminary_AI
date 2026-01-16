@@ -221,7 +221,7 @@ export function EmailDetail({
               size="sm"
               variant="outline"
               onClick={() => {
-                router.push('/chatting');
+                router.push(`/chatting?emailId=${email.id}`);
               }}
             >
               <MessageSquare className="h-4 w-4 mr-2" />
@@ -237,7 +237,7 @@ export function EmailDetail({
               원클릭 회신
             </Button>
           )}
-          {onToggleBookmark && !hasReplied && (
+          {onToggleBookmark && !hasReplied ? (
             <Button
               size="sm"
               variant="outline"
@@ -250,7 +250,7 @@ export function EmailDetail({
               )} />
               {bookmarking ? "처리 중..." : email.isStarred ? "북마크 해제" : "북마크"}
             </Button>
-          )}
+          ) : null}
           {onToggleRead && (
             <Button
               size="sm"
