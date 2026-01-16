@@ -6,7 +6,8 @@ import { ko } from "date-fns/locale/ko";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useMemo } from "react";
-import { Mail, MailOpen, Send, Trash2, FileText, Package, Tag, Calendar, Clock, DollarSign, Info, Sparkles, Bookmark, ShoppingBag, Handshake, ClipboardList, Brain } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Mail, MailOpen, Send, Trash2, FileText, Package, Tag, Calendar, Clock, DollarSign, Info, Sparkles, Bookmark, ShoppingBag, Handshake, ClipboardList, Brain, MessageSquare } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import DOMPurify from "isomorphic-dompurify";
@@ -76,12 +77,16 @@ export function EmailDetail({
   onToggleBookmark,
   onOpenReply,
 }: EmailDetailProps) {
+  const router = useRouter();
   const [deleting, setDeleting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [bookmarking, setBookmarking] = useState(false);
   const emailBody = email.bodyFullText || email.bodySnippet || "본문 없음";
   const isHtmlBody = useMemo(() => /<\/?[a-z][\s\S]*>/i.test(emailBody), [emailBody]);
   const sanitizedHtml = useMemo(() => (isHtmlBody ? DOMPurify.sanitize(emailBody) : ""), [isHtmlBody, emailBody]);
+  
+  // Check if email is in replied folder
+  const hasReplied = (email as any).hasReplied === true;
 
 
   const handleTrash = async () => {
@@ -211,14 +216,41 @@ export function EmailDetail({
 
         {/* 액션 버튼 */}
         <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onOpenReply?.()}
-          >
-            <Send className="h-4 w-4 mr-2" />
-            원클릭 회신
-          </Button>
+          {hasReplied ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                router.push('/chatting');
+              }}
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              채팅으로 이동
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onOpenReply?.()}
+            >
+              <Send className="h-4 w-4 mr-2" />
+              원클릭 회신
+            </Button>
+          )}
+          {onToggleBookmark && !hasReplied && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleToggleBookmark}
+              disabled={bookmarking}
+            >
+              <Bookmark className={cn(
+                "h-4 w-4 mr-2",
+                email.isStarred ? "fill-current text-yellow-600" : "text-gray-400"
+              )} />
+              {bookmarking ? "처리 중..." : email.isStarred ? "북마크 해제" : "북마크"}
+            </Button>
+          )}
           {onToggleRead && (
             <Button
               size="sm"

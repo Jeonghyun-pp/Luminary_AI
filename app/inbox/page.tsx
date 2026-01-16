@@ -1774,18 +1774,33 @@ export default function InboxPage() {
                       if (res.ok) {
                         toast.success("답변이 전송되었고 채팅방이 생성되었습니다. 채팅 탭에서 확인하세요.");
                         
-                        // Update email to mark as replied (like bookmark)
+                        // Update email to mark as replied and unbookmark (like bookmark)
                         const currentEmailId = selectedEmail?.id;
+                        const wasStarred = selectedEmail?.isStarred || false;
+                        
                         if (currentEmailId) {
+                          // Update local state
                           setAllEmails(prev => prev.map(email => 
                             email.id === currentEmailId 
-                              ? { ...email, hasReplied: true as any }
+                              ? { ...email, hasReplied: true as any, isStarred: false }
                               : email
                           ));
                           
                           // Update selected email if it's the same
                           if (selectedEmail?.id === currentEmailId) {
-                            setSelectedEmail(prev => prev ? { ...prev, hasReplied: true as any } : null);
+                            setSelectedEmail(prev => prev ? { ...prev, hasReplied: true as any, isStarred: false } : null);
+                          }
+                          
+                          // Unbookmark via API if it was starred
+                          if (wasStarred) {
+                            try {
+                              await fetch(`/api/emails/${currentEmailId}/favorite`, {
+                                method: "POST",
+                              });
+                            } catch (error) {
+                              console.error("Failed to unbookmark email:", error);
+                              // Don't fail the whole operation if unbookmark fails
+                            }
                           }
                         }
                         
