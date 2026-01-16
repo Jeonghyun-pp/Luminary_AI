@@ -97,6 +97,26 @@ export default function ChattingPage() {
       // Load messages with loading indicator when switching threads
       loadMessages(selectedThread.emailId, isNewThread);
       
+      // Initial sync: Poll Gmail immediately when opening a thread (don't wait 5 seconds)
+      if (isNewThread) {
+        fetch(`/api/chatting/threads/${selectedThread.emailId}/poll`, {
+          method: "POST",
+        })
+          .then(async (res) => {
+            if (res.ok) {
+              const data = await res.json();
+              if (data.syncedCount > 0) {
+                console.log(`[Chatting] Initial sync: ${data.syncedCount} messages from Gmail`);
+                // Reload messages after sync
+                loadMessages(selectedThread.emailId, false);
+              }
+            }
+          })
+          .catch((error) => {
+            console.error("[Chatting] Initial sync error:", error);
+          });
+      }
+      
       // Mark thread as read when opening (always, not just when unreadCount > 0)
       fetch(`/api/chatting/threads/${selectedThread.emailId}/mark-read`, {
         method: "POST",

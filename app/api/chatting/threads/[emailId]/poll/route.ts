@@ -56,9 +56,10 @@ export async function POST(
     const threadMessages = await fetchThreadMessages(userId, threadId);
     const userEmail = user.email || "";
 
-    // Get all existing replies for this thread to avoid duplicates
+    // Get all existing replies for this emailId to avoid duplicates
+    // Use emailId for faster query (more specific than threadId)
     const existingRepliesSnapshot = await repliesCollection
-      .where("threadId", "==", threadId)
+      .where("emailId", "==", emailId)
       .get();
     
     const existingExternalIds = new Set(
@@ -71,22 +72,13 @@ export async function POST(
     );
 
     let syncedCount = 0;
+    const newMessages: any[] = [];
 
-    // Save all new messages to Firebase (including original email)
+    // Collect new messages first (avoid individual queries)
     for (const msg of threadMessages) {
       // Skip if already exists
       if (existingExternalIds.has(msg.id)) {
         continue;
-      }
-
-      // Double-check: query directly by externalMessageId to avoid race conditions
-      const duplicateCheck = await repliesCollection
-        .where("externalMessageId", "==", msg.id)
-        .limit(1)
-        .get();
-      
-      if (!duplicateCheck.empty) {
-        continue; // Already exists, skip
       }
 
       // Determine recipient email
@@ -94,8 +86,7 @@ export async function POST(
         ? (msg.to.includes("<") ? msg.to.split("<")[1].split(">")[0] : msg.to)
         : userEmail;
 
-      // Save to Firebase
-      await repliesCollection.add({
+      newMessages.push({
         emailId: emailId,
         externalMessageId: msg.id,
         threadId: threadId,
@@ -103,12 +94,28 @@ export async function POST(
         body: msg.body || "",
         from: msg.from || userEmail,
         to: recipientEmail,
-        sentAt: msg.sentAt, // Use actual sent time from Gmail
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
+        sentAt: msg.sentAt,
       });
+    }
 
-      syncedCount++;
+    // Batch write all new messages at once (more efficient)
+    // Firestore batch limit is 500 operations
+    const batchSize = 500;
+    for (let i = 0; i < newMessages.length; i += batchSize) {
+      const batchMessages = newMessages.slice(i, i + batchSize);
+      const batch = repliesCollection.firestore.batch();
+      
+      for (const msg of batchMessages) {
+        const docRef = repliesCollection.doc();
+        batch.set(docRef, {
+          ...msg,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
+      
+      await batch.commit();
+      syncedCount += batchMessages.length;
     }
 
     return NextResponse.json({
