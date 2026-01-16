@@ -307,7 +307,7 @@ export default function SettingsPage() {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        이메일 가져오기: 최대 50개
+                        이메일 가져오기: 최대 200개
                       </li>
                     </ul>
                     <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white">
