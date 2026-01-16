@@ -237,20 +237,6 @@ export function EmailDetail({
               원클릭 회신
             </Button>
           )}
-          {onToggleBookmark && !hasReplied ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleToggleBookmark}
-              disabled={bookmarking}
-            >
-              <Bookmark className={cn(
-                "h-4 w-4 mr-2",
-                email.isStarred ? "fill-current text-yellow-600" : "text-gray-400"
-              )} />
-              {bookmarking ? "처리 중..." : email.isStarred ? "북마크 해제" : "북마크"}
-            </Button>
-          ) : null}
           {onToggleRead && (
             <Button
               size="sm"
