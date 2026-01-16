@@ -71,8 +71,8 @@ export default function InboxPage() {
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
   const [deadlineDropdownOpen, setDeadlineDropdownOpen] = useState(false);
   
-  // AI efficiency analysis
-  const [efficiencyScores, setEfficiencyScores] = useState<Map<string, { efficiency: number; laborEstimate: number; rewardEstimate: number }>>(new Map());
+  // AI sorting
+  const [aiSortedOrder, setAiSortedOrder] = useState<string[]>([]);
   const [analyzingEfficiency, setAnalyzingEfficiency] = useState(false);
   const [hasRequestedAnalysis, setHasRequestedAnalysis] = useState(false);
   const [aiSortPrompt, setAiSortPrompt] = useState<string>("시간 투입 대비 보상이 높은 순으로 정렬");
@@ -194,7 +194,7 @@ export default function InboxPage() {
     filtered = sortEmails(filtered, sortBy, sortOrder);
     
     setEmails(filtered);
-  }, [allEmails, appliedSearchQuery, categoryFilter, typeFilter, deadlineFilter, unreadFilter, bookmarkFilter, trashFilter, sortBy, sortOrder, efficiencyScores]);
+  }, [allEmails, appliedSearchQuery, categoryFilter, typeFilter, deadlineFilter, unreadFilter, bookmarkFilter, trashFilter, sortBy, sortOrder, aiSortedOrder]);
   
   // Auto-select next email if current selection is no longer in the filtered list
   useEffect(() => {
@@ -276,21 +276,38 @@ export default function InboxPage() {
     return 0;
   };
 
-  // Sort by AI efficiency
-  const tournamentSortByEfficiency = (emails: Email[], order: "asc" | "desc"): Email[] => {
-    // Use standard sort for efficiency (more reliable than tournament sort)
+  // Sort by AI order
+  const sortByAiOrder = (emails: Email[], order: "asc" | "desc"): Email[] => {
+    if (aiSortedOrder.length === 0) {
+      return emails; // No AI sort order yet, return as-is
+    }
+
+    // Create a map of email ID to index in sorted order
+    const orderMap = new Map<string, number>();
+    aiSortedOrder.forEach((id, index) => {
+      orderMap.set(id, index);
+    });
+
+    // Sort emails based on AI order
     return [...emails].sort((a, b) => {
-      const scoreA = efficiencyScores.get(a.id)?.efficiency || 0;
-      const scoreB = efficiencyScores.get(b.id)?.efficiency || 0;
-      return order === "desc" ? scoreB - scoreA : scoreA - scoreB;
+      const indexA = orderMap.get(a.id) ?? Infinity;
+      const indexB = orderMap.get(b.id) ?? Infinity;
+      
+      if (order === "desc") {
+        // Descending: lower index (earlier in sorted list) comes first
+        return indexA - indexB;
+      } else {
+        // Ascending: higher index (later in sorted list) comes first
+        return indexB - indexA;
+      }
     });
   };
 
   // Sort emails function
   const sortEmails = (emails: Email[], sortBy: string, order: "asc" | "desc"): Email[] => {
-    // Use tournament sort for AI efficiency
+    // Use AI sort order
     if (sortBy === "ai") {
-      return tournamentSortByEfficiency(emails, order);
+      return sortByAiOrder(emails, order);
     }
     
     return [...emails].sort((a, b) => {
@@ -355,7 +372,7 @@ export default function InboxPage() {
   useEffect(() => {
     if (sortBy !== "ai") {
       setHasRequestedAnalysis(false);
-      setEfficiencyScores(new Map());
+      setAiSortedOrder([]);
     }
   }, [sortBy]);
 
@@ -369,23 +386,93 @@ export default function InboxPage() {
       return;
     }
 
+    // Get filtered emails before sorting (to send to AI)
+    let emailsToSort = allEmails;
+    
+    // Apply all filters except sorting
+    if (appliedSearchQuery) {
+      const query = appliedSearchQuery.toLowerCase();
+      emailsToSort = emailsToSort.filter((email: Email) => {
+        const subject = (email.subject || "").toLowerCase();
+        const from = (email.from || "").toLowerCase();
+        const product = (email.emailAnalysis?.product || "").toLowerCase();
+        return subject.includes(query) || from.includes(query) || product.includes(query);
+      });
+    }
+
+    if (categoryFilter.length > 0) {
+      emailsToSort = emailsToSort.filter((email: Email) => {
+        const product = email.emailAnalysis?.product || "";
+        return categoryFilter.some(cat => product.toLowerCase().includes(cat.toLowerCase()));
+      });
+    }
+
+    if (typeFilter.length > 0) {
+      emailsToSort = emailsToSort.filter((email: Email) => {
+        const type = email.emailAnalysis?.type || "";
+        return typeFilter.includes(type);
+      });
+    }
+
+    if (deadlineFilter.length > 0) {
+      const now = new Date();
+      emailsToSort = emailsToSort.filter((email: Email) => {
+        const schedule = email.emailAnalysis?.schedule || email.sponsorshipInfo?.deadline || null;
+        if (!schedule || schedule === "정보 없음") return false;
+        
+        const deadlineDate = extractDeadlineDate(schedule);
+        if (!deadlineDate) return false;
+        
+        const daysDiff = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        
+        return deadlineFilter.some(filter => {
+          if (filter === "thisWeek") {
+            return daysDiff >= 0 && daysDiff <= 7;
+          } else if (filter === "thisMonth") {
+            return daysDiff >= 0 && daysDiff <= 30;
+          } else if (filter === "overdue") {
+            return daysDiff < 0;
+          }
+          return false;
+        });
+      });
+    }
+
+    if (trashFilter) {
+      emailsToSort = emailsToSort.filter((email: Email) => email.isTrashed === true);
+    } else if (bookmarkFilter) {
+      emailsToSort = emailsToSort.filter((email: Email) => email.isStarred === true && email.isTrashed !== true);
+    } else {
+      emailsToSort = emailsToSort.filter((email: Email) => email.isTrashed !== true && email.isStarred !== true);
+    }
+
+    if (unreadFilter) {
+      emailsToSort = emailsToSort.filter((email: Email) => !email.isRead);
+    }
+
+    if (emailsToSort.length === 0) {
+      toast.error("정렬할 이메일이 없습니다.");
+      return;
+    }
+
     setHasRequestedAnalysis(true);
     setAnalyzingEfficiency(true);
-    toast.info("AI 분석을 시작합니다...");
+    toast.info("AI 정렬을 시작합니다...");
     
-    fetch("/api/emails/analyze-efficiency", {
+    fetch("/api/emails/sort-ai", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        emails: emailsToSort,
         prompt: aiSortPrompt.trim(),
       }),
     })
       .then(async (res) => {
         if (!res.ok) {
           const error = await res.json().catch(() => ({}));
-          throw new Error(error.error || "Failed to analyze efficiency");
+          throw new Error(error.error || "Failed to sort emails");
         }
         return res.json();
       })
@@ -393,24 +480,16 @@ export default function InboxPage() {
         if (!data.success) {
           throw new Error(data.error || "Invalid response from server");
         }
-        if (data.scores && Object.keys(data.scores).length > 0) {
-          const scoresMap = new Map<string, { efficiency: number; laborEstimate: number; rewardEstimate: number }>();
-          Object.entries(data.scores).forEach(([emailId, score]: [string, any]) => {
-            scoresMap.set(emailId, {
-              efficiency: score.efficiency || 0,
-              laborEstimate: score.laborEstimate || 0,
-              rewardEstimate: score.rewardEstimate || 0,
-            });
-          });
-          setEfficiencyScores(scoresMap);
-          toast.success(`${data.analyzed || allEmails.length}개 이메일의 AI 분석이 완료되었습니다.`);
+        if (data.sortedEmailIds && Array.isArray(data.sortedEmailIds)) {
+          setAiSortedOrder(data.sortedEmailIds);
+          toast.success(`${data.total || emailsToSort.length}개 이메일의 AI 정렬이 완료되었습니다.`);
         } else {
-          throw new Error("No scores returned from server");
+          throw new Error("No sorted order returned from server");
         }
       })
       .catch((error) => {
-        console.error("[Inbox] Failed to analyze efficiency:", error);
-        toast.error("AI 분석에 실패했습니다.");
+        console.error("[Inbox] Failed to sort emails:", error);
+        toast.error("AI 정렬에 실패했습니다.");
         setHasRequestedAnalysis(false);
       })
       .finally(() => {
