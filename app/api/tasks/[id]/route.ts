@@ -3,11 +3,13 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   resolveUserDocument,
   getUserTaskCollectionRefFromResolved,
+  getUserCalendarCollectionRefFromResolved,
 } from "@/lib/firebase";
 import { updateTaskSchema, taskIdSchema } from "@/lib/validations/task";
 import { withErrorHandler } from "@/lib/errors/handler";
 import { NotFoundError } from "@/lib/errors/handler";
 import { FieldValue } from "firebase-admin/firestore";
+import { deleteCalendarEvent } from "@/lib/calendar";
 
 export const PATCH = withErrorHandler(async (
   request: Request,
@@ -74,6 +76,34 @@ export const DELETE = withErrorHandler(async (
     throw new NotFoundError("작업을 찾을 수 없습니다.");
   }
 
+  // Find and delete related calendar events
+  const calendarCollection = getUserCalendarCollectionRefFromResolved(userRef);
+  const calendarEventsSnapshot = await calendarCollection
+    .where("taskId", "==", id)
+    .get();
+
+  // Delete from Google Calendar and Firebase
+  for (const calendarDoc of calendarEventsSnapshot.docs) {
+    const calendarData = calendarDoc.data();
+    const googleEventId = calendarData.googleEventId;
+
+    // Delete from Google Calendar if event ID exists
+    if (googleEventId) {
+      try {
+        await deleteCalendarEvent(user.id, googleEventId);
+        console.log(`[Delete Task] Deleted Google Calendar event: ${googleEventId}`);
+      } catch (error) {
+        console.error(`[Delete Task] Failed to delete Google Calendar event: ${googleEventId}`, error);
+        // Continue to delete from Firebase even if Google Calendar deletion fails
+      }
+    }
+
+    // Delete from Firebase calendar collection
+    await calendarDoc.ref.delete();
+    console.log(`[Delete Task] Deleted Firebase calendar event: ${calendarDoc.id}`);
+  }
+
+  // Delete the task
   await tasksCollection.doc(id).delete();
 
   return NextResponse.json({ success: true });

@@ -208,3 +208,18 @@ export async function listCalendarEvents(
   return response.data.items || [];
 }
 
+/**
+ * Delete a calendar event from Google Calendar
+ */
+export async function deleteCalendarEvent(
+  userId: string,
+  eventId: string
+): Promise<void> {
+  const calendar = await getCalendarClient(userId);
+
+  await calendar.events.delete({
+    calendarId: "primary",
+    eventId: eventId,
+  });
+}
+
