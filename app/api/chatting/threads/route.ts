@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
       lastMessageAt: Date;
       unreadCount: number;
       hasTask: boolean;
+      hasReplied?: boolean; // 원클릭 회신 여부
     }>();
 
     for (const replyDoc of repliesSnapshot.docs) {
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
         let subjectSummary: string | undefined = undefined;
         let from: string = "";
         let fromEmail: string = "";
+        let hasReplied: boolean = false;
 
         if (emailDoc.exists) {
           // Email exists, use email data
@@ -65,6 +67,7 @@ export async function GET(request: NextRequest) {
             threadId = email.threadId || reply.threadId || null;
             subject = email.subject || reply.subject || "";
             subjectSummary = email.subjectSummary || undefined;
+            hasReplied = email.hasReplied || false;
             from = email.from || "";
             fromEmail = email.from.includes("<")
               ? email.from.split("<")[1].split(">")[0]
@@ -98,6 +101,7 @@ export async function GET(request: NextRequest) {
           lastMessageAt: reply.sentAt?.toDate?.() || new Date(reply.sentAt),
           unreadCount: 0, // Will be updated from Gmail
           hasTask: emailIdsWithTasks.has(emailId),
+          hasReplied: hasReplied,
         });
       } else {
         const thread = threadMap.get(emailId)!;

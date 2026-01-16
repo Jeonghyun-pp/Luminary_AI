@@ -1734,7 +1734,7 @@ export default function InboxPage() {
                       });
 
                       if (res.ok) {
-                        toast.success("답변이 전송되었습니다.");
+                        toast.success("답변이 전송되었고 채팅방이 생성되었습니다. 채팅 탭에서 확인하세요.");
                         setReplyMode(false);
                         setReplySubject("");
                         setReplyBody("");

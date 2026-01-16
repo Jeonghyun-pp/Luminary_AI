@@ -133,12 +133,19 @@ Keep only the essential information about the product, collaboration type, or ma
         
         const summarized = titleResponse.choices[0].message.content?.trim();
         if (summarized) {
-          // Update email document with subject summary
+          // Update email document with subject summary and hasReplied flag
           await inboxCollection.doc(emailId).update({
             subjectSummary: summarized,
+            hasReplied: true, // Mark as replied
             updatedAt: FieldValue.serverTimestamp(),
           });
-          console.log(`[Reply Email] Saved subject summary for email ${emailId}: ${summarized}`);
+          console.log(`[Reply Email] Saved subject summary and marked as replied for email ${emailId}: ${summarized}`);
+        } else {
+          // Even if summarization fails, mark as replied
+          await inboxCollection.doc(emailId).update({
+            hasReplied: true,
+            updatedAt: FieldValue.serverTimestamp(),
+          });
         }
       } catch (error: any) {
         console.error(`[Reply Email] Failed to generate subject summary:`, error);

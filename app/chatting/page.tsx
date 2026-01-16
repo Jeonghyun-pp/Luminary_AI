@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale/ko";
-import { MessageSquare, Send, CheckSquare2, Calendar, LogOut, Trash2, Filter, XCircle } from "lucide-react";
+import { MessageSquare, Send, CheckSquare2, Calendar, LogOut, Trash2, Filter, XCircle, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +21,7 @@ interface ChatThread {
   lastMessageAt: Date;
   unreadCount: number;
   hasTask?: boolean;
+  hasReplied?: boolean; // 원클릭 회신 여부
 }
 
 interface ChatMessage {
@@ -70,6 +71,7 @@ export default function ChattingPage() {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [leavingThreads, setLeavingThreads] = useState<Set<string>>(new Set());
   const [taskFilter, setTaskFilter] = useState<"all" | "tasks" | "no-tasks">("all"); // "all" = all, "tasks" = tasks only, "no-tasks" = no tasks only
+  const [repliedFilter, setRepliedFilter] = useState<boolean>(false); // false = all, true = replied only
   const selectedThreadRef = useRef<ChatThread | null>(null); // Always keep latest selectedThread
 
   useEffect(() => {
@@ -341,15 +343,23 @@ export default function ChattingPage() {
     }
   };
 
-  // Filter threads based on taskFilter
+  // Filter threads based on taskFilter and repliedFilter
   const displayedThreads = (() => {
+    let filtered = threads;
+    
+    // Apply task filter
     if (taskFilter === "tasks") {
-      return threads.filter((thread) => thread.hasTask);
+      filtered = filtered.filter((thread) => thread.hasTask);
     } else if (taskFilter === "no-tasks") {
-      return threads.filter((thread) => !thread.hasTask);
-    } else {
-      return threads;
+      filtered = filtered.filter((thread) => !thread.hasTask);
     }
+    
+    // Apply replied filter
+    if (repliedFilter) {
+      filtered = filtered.filter((thread) => thread.hasReplied);
+    }
+    
+    return filtered;
   })();
 
   const handleLeaveThread = async (emailId: string, event?: React.MouseEvent) => {
@@ -556,12 +566,32 @@ export default function ChattingPage() {
       });
 
       if (res.ok) {
-        toast.success("답변이 전송되었습니다.");
+        toast.success("답변이 전송되었고 채팅방이 생성되었습니다.");
         setReplyBody("");
         // Reload messages to show the sent message (without loading indicator)
         await loadMessages(selectedThread.emailId, false);
-        // Reload threads immediately to update unread count
+        // Reload threads immediately to update unread count and hasReplied status
         await loadThreads(false); // Don't use cache after sending message
+        
+        // Wait a bit for threads to reload, then move to next thread
+        setTimeout(async () => {
+          // Reload threads again to get updated hasReplied status
+          await loadThreads(false);
+          
+          // Move to next thread after successful reply
+          const currentIndex = displayedThreads.findIndex(t => t.emailId === selectedThread.emailId);
+          if (currentIndex !== -1 && currentIndex < displayedThreads.length - 1) {
+            // Select next thread
+            const nextThread = displayedThreads[currentIndex + 1];
+            setSelectedThread(nextThread);
+            selectedThreadRef.current = nextThread;
+          } else if (displayedThreads.length > 0) {
+            // If last thread, select first one
+            const firstThread = displayedThreads[0];
+            setSelectedThread(firstThread);
+            selectedThreadRef.current = firstThread;
+          }
+        }, 500);
       } else {
         const error = await res.json();
         if (error.requiresReauth) {
@@ -788,6 +818,7 @@ export default function ChattingPage() {
               )}
               <div className="flex items-center gap-2 ml-4">
                 {!isSelectionMode && (
+                  <>
                   <Button
                     size="sm"
                     variant="outline"
@@ -820,6 +851,19 @@ export default function ChattingPage() {
                       taskFilter === "all" && "text-gray-400"
                     )} />
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setRepliedFilter(!repliedFilter)}
+                    className={cn(
+                      "h-8 px-2 text-xs",
+                      repliedFilter && "bg-purple-50 border-purple-300 text-purple-700"
+                    )}
+                    title={repliedFilter ? "모든 채팅방 보기" : "회신한 채팅방만 보기"}
+                  >
+                    {repliedFilter ? "회신함" : "전체"}
+                  </Button>
+                  </>
                 )}
                 {isSelectionMode ? (
                   <>
@@ -862,7 +906,9 @@ export default function ChattingPage() {
               </div>
             </div>
             <p className="text-sm text-gray-500 mt-1">
-              {taskFilter === "tasks"
+              {repliedFilter
+                ? `회신한 채팅방 ${displayedThreads.length}개`
+                : taskFilter === "tasks"
                 ? `Task로 넘긴 채팅방 ${displayedThreads.length}개`
                 : taskFilter === "no-tasks"
                 ? `Task로 넘기지 않은 채팅방 ${displayedThreads.length}개`
@@ -916,8 +962,15 @@ export default function ChattingPage() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate">
-                              {thread.subjectSummary || thread.subject}
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium text-sm truncate">
+                                {thread.subjectSummary || thread.subject}
+                              </div>
+                              {thread.hasReplied && (
+                                <div title="회신한 채팅방">
+                                  <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                </div>
+                              )}
                             </div>
                             <div className="text-xs text-gray-500 truncate mt-1">
                               {getFromName(thread.from)}
@@ -948,8 +1001,8 @@ export default function ChattingPage() {
               {/* Chat header */}
               <div className="border-b bg-white p-4 flex items-center justify-between">
                 <div>
-                  <div className="font-semibold">{getFromName(selectedThread.from)}</div>
-                  <div className="text-sm text-gray-500 mt-1">{selectedThread.subject}</div>
+                  <div className="font-semibold">{selectedThread.subjectSummary || selectedThread.subject}</div>
+                  <div className="text-sm text-gray-500 mt-1">{getFromName(selectedThread.from)}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   {!taskAnalysis ? (
