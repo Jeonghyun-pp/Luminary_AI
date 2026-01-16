@@ -648,9 +648,11 @@ export default function ChattingPage() {
         <div className="w-80 border-r bg-white flex flex-col">
           <div className="border-b p-4">
             <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" />
-              </h2>
+              {!isSelectionMode && (
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                </h2>
+              )}
               <div className="flex items-center gap-2 ml-4">
                 {!isSelectionMode && (
                   <Button
