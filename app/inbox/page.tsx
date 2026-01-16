@@ -1771,6 +1771,37 @@ export default function InboxPage() {
 
                       if (res.ok) {
                         toast.success("답변이 전송되었고 채팅방이 생성되었습니다. 채팅 탭에서 확인하세요.");
+                        
+                        // Update email to mark as replied (like bookmark)
+                        const currentEmailId = selectedEmail?.id;
+                        if (currentEmailId) {
+                          setAllEmails(prev => prev.map(email => 
+                            email.id === currentEmailId 
+                              ? { ...email, hasReplied: true as any }
+                              : email
+                          ));
+                          
+                          // Update selected email if it's the same
+                          if (selectedEmail?.id === currentEmailId) {
+                            setSelectedEmail(prev => prev ? { ...prev, hasReplied: true as any } : null);
+                          }
+                        }
+                        
+                        // Reload emails to get updated hasReplied status
+                        await loadEmails(undefined, true, false);
+                        
+                        // Move to next email
+                        setTimeout(() => {
+                          const currentIndex = emails.findIndex(e => e.id === currentEmailId);
+                          if (currentIndex !== -1 && currentIndex < emails.length - 1) {
+                            // Select next email
+                            setSelectedEmail(emails[currentIndex + 1]);
+                          } else if (emails.length > 0) {
+                            // If last email, select first one
+                            setSelectedEmail(emails[0]);
+                          }
+                        }, 100);
+                        
                         setReplyMode(false);
                         setReplySubject("");
                         setReplyBody("");
