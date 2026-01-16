@@ -718,18 +718,15 @@ export default function InboxPage() {
         <div className="border-b bg-white p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Inbox</h2>
-            <div className="flex gap-2 items-center">
-              <div className="flex flex-col items-end mr-2">
-                <Button
-                  onClick={handleFetchEmails}
-                  disabled={fetching}
-                  size="sm"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  {fetching ? "가져오는 중..." : "이메일 가져오기"}
-                </Button>
-                <span className="text-xs text-gray-500 mt-1">최대 50개씩 가져옵니다</span>
-              </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleFetchEmails}
+                disabled={fetching}
+                size="sm"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                {fetching ? "가져오는 중..." : "이메일 가져오기"}
+              </Button>
               <Button
                 onClick={handleTrashAllEmails}
                 disabled={fetching || allEmails.length === 0}
@@ -1134,7 +1131,7 @@ export default function InboxPage() {
                         </p>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500">이메일을 확인하는 중...</p>
+                      <p className="text-sm text-gray-500">이메일을 확인하는 중...(최대 50개)</p>
                     )}
                   </div>
                 </div>
