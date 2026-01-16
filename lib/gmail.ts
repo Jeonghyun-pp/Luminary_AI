@@ -235,15 +235,12 @@ export async function fetchGmailEmails(userId: string, maxResults: number = 50) 
   // Add filters to exclude:
   // 1. Emails sent by the user
   // 2. Reply emails (subject starts with "Re:" or "RE:")
-  // 3. Ad emails (subject starts with "(광고)")
   let query = sponsorshipQuery;
   if (userEmail) {
     query += ` -from:${userEmail}`;
   }
   // Exclude reply emails (Re:, RE:, re:)
   query += ` -subject:"Re:" -subject:"RE:" -subject:"re:"`;
-  // Exclude ad emails (광고)
-  query += ` -subject:"(광고)" -subject:"(광고 )"`;
   
   let response;
   try {
@@ -299,11 +296,6 @@ export async function fetchGmailEmails(userId: string, maxResults: number = 50) 
     // Skip emails with "Re:" or "RE:" in subject (reply emails)
     if (subject && (subject.trim().startsWith("Re:") || subject.trim().startsWith("RE:") || subject.trim().startsWith("re:"))) {
       continue; // Skip reply emails
-    }
-
-    // Skip emails with "(광고)" in subject (ad emails)
-    if (subject && (subject.trim().startsWith("(광고)") || subject.trim().startsWith("(광고 )"))) {
-      continue; // Skip ad emails
     }
 
     // Additional check: Skip if from field contains user's email (double-check)
