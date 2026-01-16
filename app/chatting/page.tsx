@@ -74,6 +74,15 @@ export default function ChattingPage() {
   useEffect(() => {
     loadThreads();
     loadTemplates();
+    
+    // Poll threads list every 5 seconds to update unreadCount
+    const threadsPollInterval = setInterval(() => {
+      loadThreads();
+    }, 5000); // 5 seconds
+    
+    return () => {
+      clearInterval(threadsPollInterval);
+    };
   }, []);
 
   useEffect(() => {

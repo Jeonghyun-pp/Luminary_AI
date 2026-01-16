@@ -104,17 +104,97 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get unread count from Gmail for each thread
+    // Sync new messages and get unread count from Gmail for each thread (in parallel for better performance)
     const threads = Array.from(threadMap.values());
-    for (const thread of threads) {
-      if (thread.threadId) {
+    
+    // Import fetchThreadMessages for syncing
+    const { fetchThreadMessages } = await import("@/lib/gmail");
+    const { FieldValue } = await import("firebase-admin/firestore");
+    const userEmail = user.email || "";
+    
+    // Process threads in parallel (batch of 10 at a time to avoid overwhelming Gmail API)
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < threads.length; i += BATCH_SIZE) {
+      const batchThreads = threads.slice(i, i + BATCH_SIZE);
+      
+      await Promise.all(batchThreads.map(async (thread) => {
+        if (!thread.threadId) {
+          thread.unreadCount = 0;
+          return;
+        }
+        
         try {
+          // Sync new messages from Gmail to Firebase (quick sync)
+          try {
+            const threadMessages = await fetchThreadMessages(userId, thread.threadId);
+            const existingRepliesSnapshot = await repliesCollection
+              .where("emailId", "==", thread.emailId)
+              .get();
+            
+            const existingExternalIds = new Set(
+              existingRepliesSnapshot.docs
+                .map(doc => {
+                  const data = doc.data();
+                  return data.externalMessageId || null;
+                })
+                .filter(id => id !== null && id !== undefined)
+            );
+
+            const newMessages: any[] = [];
+
+            for (const msg of threadMessages) {
+              if (existingExternalIds.has(msg.id)) {
+                continue;
+              }
+
+              const recipientEmail = msg.isSent 
+                ? (msg.to.includes("<") ? msg.to.split("<")[1].split(">")[0] : msg.to)
+                : userEmail;
+
+              newMessages.push({
+                emailId: thread.emailId,
+                externalMessageId: msg.id,
+                threadId: thread.threadId,
+                subject: msg.subject || "",
+                body: msg.body || "",
+                from: msg.from || userEmail,
+                to: recipientEmail,
+                sentAt: msg.sentAt,
+              });
+            }
+
+            // Batch write new messages
+            if (newMessages.length > 0) {
+              const batchSize = 500;
+              for (let j = 0; j < newMessages.length; j += batchSize) {
+                const batchMessages = newMessages.slice(j, j + batchSize);
+                const batch = repliesCollection.firestore.batch();
+                
+                for (const msg of batchMessages) {
+                  const docRef = repliesCollection.doc();
+                  batch.set(docRef, {
+                    ...msg,
+                    createdAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp(),
+                  });
+                }
+                
+                await batch.commit();
+              }
+              console.log(`[Chatting Threads] Synced ${newMessages.length} new messages for thread ${thread.emailId}`);
+            }
+          } catch (syncError) {
+            console.error(`[Chatting Threads] Failed to sync messages for thread ${thread.threadId}:`, syncError);
+            // Continue to get unread count even if sync fails
+          }
+          
+          // Get unread count from Gmail
           thread.unreadCount = await getThreadUnreadCount(userId, thread.threadId);
         } catch (error) {
-          console.error(`[Chatting Threads] Failed to get unread count for thread ${thread.threadId}:`, error);
+          console.error(`[Chatting Threads] Failed to process thread ${thread.threadId}:`, error);
           thread.unreadCount = 0;
         }
-      }
+      }));
     }
 
     // Sort by last message time (descending)
