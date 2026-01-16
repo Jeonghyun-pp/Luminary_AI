@@ -36,7 +36,6 @@ export default function ChattingPage() {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(false);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [replySubject, setReplySubject] = useState("");
   const [replyBody, setReplyBody] = useState("");
@@ -250,7 +249,6 @@ export default function ChattingPage() {
     // Store current selected thread emailId before loading
     const currentSelectedEmailId = selectedThread?.emailId;
     
-    setLoading(true);
     try {
       const res = await fetch("/api/chatting/threads");
       const data = await res.json();
@@ -275,8 +273,6 @@ export default function ChattingPage() {
       }
     } catch (error) {
       console.error("Failed to load threads:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -809,9 +805,7 @@ export default function ChattingPage() {
             </p>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="p-4 text-center text-gray-500 text-sm">로딩 중...</div>
-            ) : displayedThreads.length === 0 ? (
+            {displayedThreads.length === 0 ? (
               <div className="p-4 text-center text-gray-500 text-sm">
                 {taskFilter === "tasks"
                   ? "Task로 넘긴 채팅방이 없습니다"
