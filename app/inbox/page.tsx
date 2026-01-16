@@ -183,9 +183,9 @@ export default function InboxPage() {
         return (email as any).hasReplied === true && email.isTrashed !== true && email.isStarred !== true;
       });
     } else {
-      // Show all emails except trashed and bookmarked ones (like trash filter)
+      // Show all emails except trashed, bookmarked, and replied ones
       filtered = filtered.filter((email: Email) => {
-        return email.isTrashed !== true && email.isStarred !== true;
+        return email.isTrashed !== true && email.isStarred !== true && (email as any).hasReplied !== true;
       });
     }
     
@@ -451,7 +451,7 @@ export default function InboxPage() {
     } else if (repliedFilter) {
       emailsToSort = emailsToSort.filter((email: Email) => (email as any).hasReplied === true && email.isTrashed !== true && email.isStarred !== true);
     } else {
-      emailsToSort = emailsToSort.filter((email: Email) => email.isTrashed !== true && email.isStarred !== true);
+      emailsToSort = emailsToSort.filter((email: Email) => email.isTrashed !== true && email.isStarred !== true && (email as any).hasReplied !== true);
     }
 
     if (unreadFilter) {
