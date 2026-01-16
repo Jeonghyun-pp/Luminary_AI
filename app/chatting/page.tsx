@@ -856,8 +856,9 @@ export default function ChattingPage() {
                     variant="outline"
                     onClick={() => setRepliedFilter(!repliedFilter)}
                     className={cn(
-                      "h-8 px-2 text-xs",
-                      repliedFilter && "bg-purple-50 border-purple-300 text-purple-700"
+                      "h-8 px-3 text-sm font-medium",
+                      repliedFilter && "bg-purple-50 border-purple-300 text-purple-700 hover:bg-purple-100",
+                      !repliedFilter && "hover:bg-gray-50"
                     )}
                     title={repliedFilter ? "모든 채팅방 보기" : "회신한 채팅방만 보기"}
                   >

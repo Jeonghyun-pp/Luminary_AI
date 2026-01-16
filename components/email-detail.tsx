@@ -6,7 +6,7 @@ import { ko } from "date-fns/locale/ko";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useMemo } from "react";
-import { Mail, MailOpen, Send, Trash2, FileText, Package, Tag, Calendar, Clock, DollarSign, Info, Sparkles, Bookmark, ShoppingBag, Handshake, ClipboardList } from "lucide-react";
+import { Mail, MailOpen, Send, Trash2, FileText, Package, Tag, Calendar, Clock, DollarSign, Info, Sparkles, Bookmark, ShoppingBag, Handshake, ClipboardList, Brain } from "lucide-react";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import DOMPurify from "isomorphic-dompurify";
@@ -267,7 +267,7 @@ export function EmailDetail({
         <Card>
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Info className="h-4 w-4 text-purple-600" />
+              <Brain className="h-4 w-4 text-purple-600" />
               AI 요약
             </CardTitle>
           </CardHeader>
