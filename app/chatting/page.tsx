@@ -75,13 +75,26 @@ export default function ChattingPage() {
     loadThreads();
     loadTemplates();
     
-    // Poll threads list every 5 seconds to update unreadCount
-    const threadsPollInterval = setInterval(() => {
-      loadThreads();
+    // Check for new messages in background every 5 seconds
+    // Only reload threads list if there are new messages
+    const checkUpdatesInterval = setInterval(() => {
+      fetch("/api/chatting/threads/check-updates")
+        .then(async (res) => {
+          if (res.ok) {
+            const data = await res.json();
+            if (data.success && data.hasUpdates) {
+              console.log(`[Chatting] New messages detected in ${data.emailIdsWithNewMessages.length} thread(s), reloading list...`);
+              loadThreads(); // Only reload if there are updates
+            }
+          }
+        })
+        .catch((error) => {
+          console.error("[Chatting] Failed to check for updates:", error);
+        });
     }, 5000); // 5 seconds
     
     return () => {
-      clearInterval(threadsPollInterval);
+      clearInterval(checkUpdatesInterval);
     };
   }, []);
 
