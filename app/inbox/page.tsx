@@ -65,6 +65,7 @@ export default function InboxPage() {
   const [unreadFilter, setUnreadFilter] = useState<boolean>(false); // false = all, true = unread only
   const [bookmarkFilter, setBookmarkFilter] = useState<boolean>(false); // false = all, true = bookmark only
   const [trashFilter, setTrashFilter] = useState<boolean>(false); // false = all, true = trash only
+  const [repliedFilter, setRepliedFilter] = useState<boolean>(false); // false = all, true = replied only
   
   // Dropdown open states
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
@@ -165,9 +166,9 @@ export default function InboxPage() {
       });
     }
     
-    // Apply filters: trash filter takes priority, then bookmark filter
+    // Apply filters: trash filter takes priority, then bookmark filter, then replied filter
     if (trashFilter) {
-      // Show only trashed emails (regardless of bookmark status)
+      // Show only trashed emails (regardless of bookmark/replied status)
       filtered = filtered.filter((email: Email) => {
         return email.isTrashed === true;
       });
@@ -175,6 +176,11 @@ export default function InboxPage() {
       // Show only bookmarked emails (but not trashed ones)
       filtered = filtered.filter((email: Email) => {
         return email.isStarred === true && email.isTrashed !== true;
+      });
+    } else if (repliedFilter) {
+      // Show only replied emails (but not trashed/bookmarked ones)
+      filtered = filtered.filter((email: Email) => {
+        return (email as any).hasReplied === true && email.isTrashed !== true && email.isStarred !== true;
       });
     } else {
       // Show all emails except trashed and bookmarked ones (like trash filter)
@@ -194,7 +200,7 @@ export default function InboxPage() {
     filtered = sortEmails(filtered, sortBy, sortOrder);
     
     setEmails(filtered);
-  }, [allEmails, appliedSearchQuery, categoryFilter, typeFilter, deadlineFilter, unreadFilter, bookmarkFilter, trashFilter, sortBy, sortOrder, aiSortedOrder]);
+  }, [allEmails, appliedSearchQuery, categoryFilter, typeFilter, deadlineFilter, unreadFilter, bookmarkFilter, trashFilter, repliedFilter, sortBy, sortOrder, aiSortedOrder]);
   
   // Auto-select next email if current selection is no longer in the filtered list
   useEffect(() => {
@@ -442,6 +448,8 @@ export default function InboxPage() {
       emailsToSort = emailsToSort.filter((email: Email) => email.isTrashed === true);
     } else if (bookmarkFilter) {
       emailsToSort = emailsToSort.filter((email: Email) => email.isStarred === true && email.isTrashed !== true);
+    } else if (repliedFilter) {
+      emailsToSort = emailsToSort.filter((email: Email) => (email as any).hasReplied === true && email.isTrashed !== true && email.isStarred !== true);
     } else {
       emailsToSort = emailsToSort.filter((email: Email) => email.isTrashed !== true && email.isStarred !== true);
     }
@@ -1080,6 +1088,7 @@ export default function InboxPage() {
                     if (!unreadFilter) {
                       setBookmarkFilter(false); // Unread filter on, bookmark filter off
                       setTrashFilter(false); // Unread filter on, trash filter off
+                      setRepliedFilter(false); // Unread filter on, replied filter off
                     }
                   }}
                   className={cn(
@@ -1104,6 +1113,7 @@ export default function InboxPage() {
                     if (!bookmarkFilter) {
                       setUnreadFilter(false); // Bookmark filter on, unread filter off
                       setTrashFilter(false); // Bookmark filter on, trash filter off
+                      setRepliedFilter(false); // Bookmark filter on, replied filter off
                     }
                   }}
                   className={cn(
@@ -1119,6 +1129,31 @@ export default function InboxPage() {
                   )}
                 </Button>
                 
+                {/* Replied Filter - Send Button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setRepliedFilter(!repliedFilter);
+                    if (!repliedFilter) {
+                      setUnreadFilter(false); // Replied filter on, unread filter off
+                      setBookmarkFilter(false); // Replied filter on, bookmark filter off
+                      setTrashFilter(false); // Replied filter on, trash filter off
+                    }
+                  }}
+                  className={cn(
+                    "h-10 w-10 p-0",
+                    repliedFilter && "bg-purple-50 border-purple-300"
+                  )}
+                  title={repliedFilter ? "전체 메일 보기" : "회신한 메일 보기"}
+                >
+                  {repliedFilter ? (
+                    <Send className="h-4 w-4 text-purple-600" />
+                  ) : (
+                    <Send className="h-4 w-4 text-gray-400" />
+                  )}
+                </Button>
+                
                 {/* Trash Filter - Trash Button */}
                 <Button
                   size="sm"
@@ -1128,6 +1163,7 @@ export default function InboxPage() {
                     if (!trashFilter) {
                       setUnreadFilter(false); // Trash filter on, unread filter off
                       setBookmarkFilter(false); // Trash filter on, bookmark filter off
+                      setRepliedFilter(false); // Trash filter on, replied filter off
                     }
                   }}
                   className={cn(
