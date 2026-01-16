@@ -35,6 +35,7 @@ export default function InboxPage() {
   const router = useRouter();
   const [emails, setEmails] = useState<Email[]>([]);
   const [allEmails, setAllEmails] = useState<Email[]>([]); // Store all emails for filtering
+  const emailsRef = useRef<Email[]>([]); // Keep latest emails for closure access
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
@@ -200,6 +201,7 @@ export default function InboxPage() {
     filtered = sortEmails(filtered, sortBy, sortOrder);
     
     setEmails(filtered);
+    emailsRef.current = filtered; // Update ref whenever emails change
   }, [allEmails, appliedSearchQuery, categoryFilter, typeFilter, deadlineFilter, unreadFilter, bookmarkFilter, trashFilter, repliedFilter, sortBy, sortOrder, aiSortedOrder]);
   
   // Auto-select next email if current selection is no longer in the filtered list
@@ -1790,17 +1792,23 @@ export default function InboxPage() {
                         // Reload emails to get updated hasReplied status
                         await loadEmails(undefined, true, false);
                         
-                        // Move to next email
+                        // Move to next email after emails are reloaded and filtered
+                        // Wait for emails state to update via useEffect
                         setTimeout(() => {
-                          const currentIndex = emails.findIndex(e => e.id === currentEmailId);
-                          if (currentIndex !== -1 && currentIndex < emails.length - 1) {
+                          const filteredEmails = emailsRef.current; // Use ref to get latest emails
+                          const currentIndex = filteredEmails.findIndex(e => e.id === currentEmailId);
+                          
+                          if (currentIndex !== -1 && currentIndex < filteredEmails.length - 1) {
                             // Select next email
-                            setSelectedEmail(emails[currentIndex + 1]);
-                          } else if (emails.length > 0) {
-                            // If last email, select first one
-                            setSelectedEmail(emails[0]);
+                            setSelectedEmail(filteredEmails[currentIndex + 1]);
+                          } else if (filteredEmails.length > 0) {
+                            // If last email or not found, select first one
+                            setSelectedEmail(filteredEmails[0]);
+                          } else {
+                            // No emails left in filtered list
+                            setSelectedEmail(null);
                           }
-                        }, 100);
+                        }, 500); // Wait longer for useEffect to update emailsRef
                         
                         setReplyMode(false);
                         setReplySubject("");
