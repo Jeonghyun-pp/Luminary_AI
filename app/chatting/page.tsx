@@ -247,6 +247,9 @@ export default function ChattingPage() {
   }, [messages]);
 
   const loadThreads = async () => {
+    // Store current selected thread emailId before loading
+    const currentSelectedEmailId = selectedThread?.emailId;
+    
     setLoading(true);
     try {
       const res = await fetch("/api/chatting/threads");
@@ -256,13 +259,13 @@ export default function ChattingPage() {
         setThreads(newThreads);
         
         // Only auto-select first thread if no thread is currently selected
-        if (newThreads.length > 0 && !selectedThread) {
+        if (newThreads.length > 0 && !currentSelectedEmailId) {
           setSelectedThread(newThreads[0]);
-        } else if (selectedThread) {
-          // Update selectedThread with latest data if it still exists
-          const updatedThread = newThreads.find((t: ChatThread) => t.emailId === selectedThread.emailId);
+        } else if (currentSelectedEmailId) {
+          // Find and update the currently selected thread (don't change selection)
+          const updatedThread = newThreads.find((t: ChatThread) => t.emailId === currentSelectedEmailId);
           if (updatedThread) {
-            // Update selectedThread with latest data (especially unreadCount)
+            // Update selectedThread with latest data (especially unreadCount) but keep same selection
             setSelectedThread(updatedThread);
           } else {
             // Selected thread no longer exists, clear selection
