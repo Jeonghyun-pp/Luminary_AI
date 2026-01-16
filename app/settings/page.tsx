@@ -263,10 +263,6 @@ export default function SettingsPage() {
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
                         일정 관리
                       </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        기본 템플릿
-                      </li>
                     </ul>
                     <Button variant="outline" className="w-full" disabled>
                       현재 플랜
@@ -282,7 +278,6 @@ export default function SettingsPage() {
                       <h3 className="text-lg font-semibold">Pro</h3>
                       <div>
                         <div className="text-2xl font-bold">월 9,900원</div>
-                        <div className="text-xs text-gray-500">Liner 기준</div>
                       </div>
                     </div>
                     <ul className="space-y-2 text-sm text-gray-600 mb-6">
@@ -296,7 +291,7 @@ export default function SettingsPage() {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        무제한 템플릿
+                        AI 기반 자동 회신
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -304,7 +299,7 @@ export default function SettingsPage() {
                       </li>
                       <li className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        고급 자동화 규칙
+                        개인화 Agent
                       </li>
                     </ul>
                     <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-white">
