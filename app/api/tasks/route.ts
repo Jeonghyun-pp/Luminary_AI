@@ -5,6 +5,7 @@ import {
   getUserTaskCollectionRefFromResolved,
   getUserEmailCollectionRefFromResolved,
 } from "@/lib/firebase";
+import { getActiveAccountId } from "@/lib/user-settings";
 import { createTaskSchema, taskQuerySchema } from "@/lib/validations/task";
 import { withErrorHandler } from "@/lib/errors/handler";
 import { NotFoundError } from "@/lib/errors/handler";
@@ -24,6 +25,7 @@ export const GET = withErrorHandler(async (request: Request) => {
   const { id: actualUserId, ref: userRef } = await resolveUserDocument(user.id);
   const tasksCollection = getUserTaskCollectionRefFromResolved(userRef);
   const inboxCollection = getUserEmailCollectionRefFromResolved(userRef);
+  const activeAccountId = await getActiveAccountId(user.id);
   let query: Query = tasksCollection;
 
   if (validated.status) {
@@ -42,8 +44,11 @@ export const GET = withErrorHandler(async (request: Request) => {
   }
 
   const snapshot = await query.orderBy("dueAt", "asc").get();
+  const docs = activeAccountId != null
+    ? snapshot.docs.filter((doc) => doc.data().accountId === activeAccountId)
+    : snapshot.docs;
   const tasks = await Promise.all(
-    snapshot.docs.map(async (doc) => {
+    docs.map(async (doc) => {
       const taskData = doc.data();
       let email = null;
 
@@ -82,6 +87,7 @@ export const POST = withErrorHandler(async (request: Request) => {
   const inboxCollection = getUserEmailCollectionRefFromResolved(userRef);
 
   const { emailId, title, description, dueAt } = createTaskSchema.parse(body);
+  const activeAccountId = await getActiveAccountId(user.id);
 
   // If emailId is provided, verify it exists for this user
   if (emailId) {
@@ -94,6 +100,7 @@ export const POST = withErrorHandler(async (request: Request) => {
 
   const taskRef = await tasksCollection.add({
     userId: actualUserId,
+    accountId: activeAccountId || null,
     emailId: emailId || null,
     title,
     description: description || null,

@@ -5,6 +5,7 @@ import {
   resolveUserDocument,
   getUserEmailCollectionRefFromResolved,
 } from "@/lib/firebase";
+import { getActiveAccountId } from "@/lib/user-settings";
 import { applyRulesToEmailTool } from "@/lib/agent/apply-rules";
 import { extractSponsorshipInfo } from "@/lib/agent/extract-sponsorship";
 import { summarizeEmailTool } from "@/lib/agent/summarize";
@@ -47,6 +48,7 @@ export async function POST() {
       const { id: resolvedUserId, ref: userRef } = await resolveUserDocument(user.id);
       actualUserId = resolvedUserId;
       const inboxCollection = getUserEmailCollectionRefFromResolved(userRef);
+      const activeAccountId = await getActiveAccountId(user.id);
 
       // Fetch emails from Gmail
       let gmailEmails;
@@ -124,6 +126,7 @@ export async function POST() {
         // Save email (confirmed as collaboration request)
         const emailRef = await inboxCollection.add({
           userId: actualUserId,
+          accountId: activeAccountId || null,
           channel: "gmail",
           externalId: emailData.externalId,
           threadId: emailData.threadId,

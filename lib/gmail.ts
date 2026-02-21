@@ -1,32 +1,54 @@
 import { google } from "googleapis";
+import type { DocumentSnapshot } from "firebase-admin/firestore";
 import { db, COLLECTIONS } from "@/lib/firebase";
 import { OAuth2Client } from "google-auth-library";
-
+import { getActiveAccountId } from "@/lib/user-settings";
 
 /**
- * Get OAuth2 client for Gmail API
+ * Get OAuth2 client for Gmail API.
+ * Uses activeAccountId from user settings when set; otherwise first Google account.
  */
-export async function getGmailClient(userId: string) {
+export async function getGmailClient(userId: string, accountId?: string | null) {
   const functionStartTime = Date.now();
-  console.log(`[Gmail] getGmailClient started for userId: ${userId}`);
-  
-  const startTime = Date.now();
-  const accountSnapshot = await db
-    .collection(COLLECTIONS.ACCOUNTS)
-    .where("userId", "==", userId)
-    .where("provider", "==", "google")
-    .limit(1)
-    .get();
+  console.log(`[Gmail] getGmailClient started for userId: ${userId}, accountId: ${accountId ?? "(auto)"}`);
 
-  const queryTime = Date.now() - startTime;
-  console.log(`[Gmail] Firebase query took ${queryTime}ms`);
+  let accountDoc: DocumentSnapshot | null = null;
 
-  if (accountSnapshot.empty) {
+  if (accountId) {
+    const doc = await db.collection(COLLECTIONS.ACCOUNTS).doc(accountId).get();
+    if (doc.exists && (doc.data()?.userId === userId) && (doc.data()?.provider === "google")) {
+      accountDoc = doc;
+    }
+  }
+  if (!accountDoc) {
+    const activeId = await getActiveAccountId(userId);
+    if (activeId) {
+      const doc = await db.collection(COLLECTIONS.ACCOUNTS).doc(activeId).get();
+      if (doc.exists && doc.data()?.provider === "google") {
+        accountDoc = doc;
+      }
+    }
+  }
+  if (!accountDoc) {
+    const startTime = Date.now();
+    const accountSnapshot = await db
+      .collection(COLLECTIONS.ACCOUNTS)
+      .where("userId", "==", userId)
+      .where("provider", "==", "google")
+      .limit(1)
+      .get();
+    const queryTime = Date.now() - startTime;
+    console.log(`[Gmail] Firebase query took ${queryTime}ms`);
+    if (!accountSnapshot.empty) {
+      accountDoc = accountSnapshot.docs[0];
+    }
+  }
+
+  if (!accountDoc || !accountDoc.exists) {
     throw new Error("No Google OAuth tokens found. Please sign in again.");
   }
 
-  const accountDoc = accountSnapshot.docs[0];
-  const account = accountDoc.data();
+  const account = accountDoc.data()!;
 
   // 디버깅: 토큰 상태 확인
   console.log("[Gmail] Token check:", {

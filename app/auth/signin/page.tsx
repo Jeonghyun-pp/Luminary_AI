@@ -1,6 +1,8 @@
 import { signIn } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
 import { Suspense } from "react";
 
 function SignInForm({ searchParams }: { searchParams: { error?: string } }) {
@@ -14,6 +16,13 @@ function SignInForm({ searchParams }: { searchParams: { error?: string } }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {searchParams?.error === "CredentialsSignin" && (
+            <div className="rounded-lg bg-red-50 border border-red-200 p-4">
+              <p className="text-sm font-semibold text-red-800">
+                이메일 또는 비밀번호가 올바르지 않습니다.
+              </p>
+            </div>
+          )}
           {searchParams?.error === "OAuthAccountNotLinked" && (
             <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-4 space-y-2">
               <p className="text-sm font-semibold text-yellow-800">
@@ -39,7 +48,7 @@ function SignInForm({ searchParams }: { searchParams: { error?: string } }) {
               </div>
             </div>
           )}
-          {searchParams?.error && searchParams.error !== "OAuthAccountNotLinked" && (
+          {searchParams?.error && searchParams.error !== "OAuthAccountNotLinked" && searchParams.error !== "CredentialsSignin" && (
             <div className="rounded-lg bg-red-50 border border-red-200 p-4 space-y-2">
               <p className="text-sm font-semibold text-red-800">
                 로그인 중 오류가 발생했습니다: {searchParams.error}
@@ -47,7 +56,7 @@ function SignInForm({ searchParams }: { searchParams: { error?: string } }) {
               <div className="text-xs text-red-700 space-y-1">
                 <p className="font-semibold">다음 사항을 확인해주세요:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li>Google Cloud Console에서 <strong>승인된 리디렉션 URI</strong>에 <code className="bg-red-100 px-1 rounded">https://luminary-ai-rust.vercel.app/api/auth/callback/google</code>가 정확히 등록되어 있는지 확인</li>
+                  <li>Google Cloud Console에서 <strong>승인된 리디렉션 URI</strong>에 <code className="bg-red-100 px-1 rounded">http://localhost:3000/api/auth/callback/google</code>가 정확히 등록되어 있는지 확인</li>
                   <li>OAuth 동의 화면의 <strong>테스트 사용자</strong>에 로그인하려는 Google 이메일이 등록되어 있는지 확인</li>
                   <li>OAuth 동의 화면의 <strong>범위(Scopes)</strong>에 필요한 권한이 모두 등록되어 있는지 확인</li>
                   <li>브라우저 캐시 및 쿠키 삭제 후 다시 시도 (또는 시크릿 모드 사용)</li>
@@ -56,16 +65,49 @@ function SignInForm({ searchParams }: { searchParams: { error?: string } }) {
               </div>
             </div>
           )}
+
+          <form
+            action={async (formData: FormData) => {
+              "use server";
+              const email = formData.get("email") as string;
+              const password = formData.get("password") as string;
+              await signIn("credentials", { email, password, redirectTo: "/inbox" });
+            }}
+            className="space-y-3"
+          >
+            <Input name="email" type="email" placeholder="이메일" required className="h-11" />
+            <Input name="password" type="password" placeholder="비밀번호" required className="h-11" />
+            <Button type="submit" className="w-full" size="lg">
+              이메일로 로그인
+            </Button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-muted-foreground">또는</span>
+            </div>
+          </div>
+
           <form
             action={async () => {
               "use server";
               await signIn("google", { redirectTo: "/inbox" });
             }}
           >
-            <Button type="submit" className="w-full" size="lg">
+            <Button type="submit" variant="outline" className="w-full" size="lg">
               Google로 로그인
             </Button>
           </form>
+
+          <p className="text-center text-sm text-muted-foreground">
+            계정이 없으신가요?{" "}
+            <Link href="/auth/signup" className="font-medium text-primary underline underline-offset-4">
+              회원가입
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

@@ -193,39 +193,25 @@ export function FirebaseAdapter(): Adapter {
         .get();
       
       if (!existingAccount.empty) {
-        // For Google accounts, delete and recreate to ensure new scopes are applied
-        // This is necessary because Google OAuth tokens are tied to the scopes requested
-        // If scopes change, we need a fresh token with the new scopes
-        if (account.provider === "google") {
-          console.log("[FirebaseAdapter] Deleting existing Google account to apply new scopes");
-          await existingAccount.docs[0].ref.delete();
-          // Create new account with fresh token
-          const newAccountRef = await db.collection(COLLECTIONS.ACCOUNTS).add({
-            ...account,
-            createdAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp(),
-          });
-          const savedAccount = await newAccountRef.get();
-          console.log("[FirebaseAdapter] Saved Google account:", {
-            accountId: savedAccount.id,
-            userId: account.userId,
-            hasAccessToken: !!account.access_token,
-            hasRefreshToken: !!account.refresh_token,
-            accessTokenLength: account.access_token?.length || 0,
-            refreshTokenLength: account.refresh_token?.length || 0,
-            expiresAt: account.expires_at,
-            scope: account.scope,
-          });
-          return account;
-        } else {
-          // For other providers, just update
-          const accountDoc = existingAccount.docs[0];
-          await accountDoc.ref.update({
-            ...account,
-            updatedAt: FieldValue.serverTimestamp(),
-          });
-          return account;
+        const accountDoc = existingAccount.docs[0];
+        const existingData = accountDoc.data();
+        const updateData: Record<string, unknown> = {
+          ...account,
+          updatedAt: FieldValue.serverTimestamp(),
+        };
+        // Google은 재로그인 시 refresh_token을 다시 주지 않으므로, 기존에 저장된 토큰 보존
+        if (updateData.refresh_token == null && existingData.refresh_token != null) {
+          updateData.refresh_token = existingData.refresh_token;
         }
+        if (updateData.access_token == null && existingData.access_token != null) {
+          updateData.access_token = existingData.access_token;
+        }
+        if (updateData.expires_at == null && existingData.expires_at != null) {
+          updateData.expires_at = existingData.expires_at;
+        }
+        await accountDoc.ref.update(updateData);
+        console.log("[FirebaseAdapter] Account already exists, updated (tokens preserved if missing)");
+        return account;
       }
       
       const newAccountRef = await db.collection(COLLECTIONS.ACCOUNTS).add({

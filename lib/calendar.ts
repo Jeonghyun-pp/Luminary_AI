@@ -1,74 +1,52 @@
 import { google } from "googleapis";
+import type { DocumentSnapshot } from "firebase-admin/firestore";
 import { db, COLLECTIONS } from "@/lib/firebase";
 import { OAuth2Client } from "google-auth-library";
 import { DetectedEvent } from "@/types";
+import { getActiveAccountId } from "@/lib/user-settings";
 
 /**
- * Get OAuth2 client for Google Calendar API
+ * Get OAuth2 client for Google Calendar API.
+ * Uses activeAccountId from user settings when set; otherwise first Google account.
  */
-export async function getCalendarClient(userId: string) {
-  console.log("[Calendar] Getting calendar client for userId:", userId);
-  
-  // Try to find account by userId
-  let accountSnapshot = await db
-    .collection(COLLECTIONS.ACCOUNTS)
-    .where("userId", "==", userId)
-    .where("provider", "==", "google")
-    .limit(1)
-    .get();
+export async function getCalendarClient(userId: string, accountId?: string | null) {
+  console.log("[Calendar] Getting calendar client for userId:", userId, "accountId:", accountId ?? "(auto)");
 
-  // If not found, try to find user first and then account
-  if (accountSnapshot.empty) {
-    console.log("[Calendar] Account not found by userId, trying to find user first...");
-    
-    // Find user by document ID or ID field
-    let userDoc = await db.collection(COLLECTIONS.USERS).doc(userId).get();
-    
-    if (!userDoc.exists) {
-      // Try to find by ID field
-      const usersSnapshot = await db.collection(COLLECTIONS.USERS)
-        .where("id", "==", userId)
-        .limit(1)
-        .get();
-      
-      if (!usersSnapshot.empty) {
-        userDoc = usersSnapshot.docs[0];
-        console.log("[Calendar] Found user by ID field, document ID:", userDoc.id);
-        // Try to find account with actual document ID
-        accountSnapshot = await db
-          .collection(COLLECTIONS.ACCOUNTS)
-          .where("userId", "==", userDoc.id)
-          .where("provider", "==", "google")
-          .limit(1)
-          .get();
+  let accountDoc: DocumentSnapshot | null = null;
+
+  if (accountId) {
+    const doc = await db.collection(COLLECTIONS.ACCOUNTS).doc(accountId).get();
+    if (doc.exists && (doc.data()?.userId === userId) && (doc.data()?.provider === "google")) {
+      accountDoc = doc;
+    }
+  }
+  if (!accountDoc) {
+    const activeId = await getActiveAccountId(userId);
+    if (activeId) {
+      const doc = await db.collection(COLLECTIONS.ACCOUNTS).doc(activeId).get();
+      if (doc.exists && doc.data()?.provider === "google") {
+        accountDoc = doc;
       }
-    } else {
-      // User found by document ID, try to find account with document ID
-      accountSnapshot = await db
-        .collection(COLLECTIONS.ACCOUNTS)
-        .where("userId", "==", userDoc.id)
-        .where("provider", "==", "google")
-        .limit(1)
-        .get();
+    }
+  }
+  if (!accountDoc) {
+    const accountSnapshot = await db
+      .collection(COLLECTIONS.ACCOUNTS)
+      .where("userId", "==", userId)
+      .where("provider", "==", "google")
+      .limit(1)
+      .get();
+    if (!accountSnapshot.empty) {
+      accountDoc = accountSnapshot.docs[0];
     }
   }
 
-  if (accountSnapshot.empty) {
+  if (!accountDoc || !accountDoc.exists) {
     console.error("[Calendar] No Google OAuth account found for userId:", userId);
-    console.log("[Calendar] Debugging: Listing all accounts:");
-    const allAccounts = await db.collection(COLLECTIONS.ACCOUNTS)
-      .where("provider", "==", "google")
-      .limit(10)
-      .get();
-    allAccounts.docs.forEach(doc => {
-      const data = doc.data();
-      console.log(`  - Account userId: ${data.userId}, providerAccountId: ${data.providerAccountId}`);
-    });
-    throw new Error("No Google OAuth tokens found");
+    throw new Error("No Google OAuth tokens found. Please sign in again.");
   }
 
-  const accountDoc = accountSnapshot.docs[0];
-  const account = accountDoc.data();
+  const account = accountDoc.data()!;
 
   if (!account?.access_token || !account?.refresh_token) {
     console.error("[Calendar] Account found but missing tokens:", {

@@ -1,6 +1,8 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 import { FirebaseAdapter } from "@/lib/firebase-adapter";
+import { verifyCredentials } from "@/lib/auth-credentials";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: FirebaseAdapter(),
@@ -20,6 +22,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   providers: [
+    Credentials({
+      name: "credentials",
+      credentials: {
+        email: { label: "이메일", type: "email" },
+        password: { label: "비밀번호", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+        const user = await verifyCredentials(
+          String(credentials.email),
+          String(credentials.password)
+        );
+        return user;
+      },
+    }),
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -27,7 +44,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         params: {
           scope: "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar",
           access_type: "offline",
-          prompt: "consent",
         },
       },
       allowDangerousEmailAccountLinking: true,
