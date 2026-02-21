@@ -20,10 +20,15 @@ class ToastManager {
     this.listeners.forEach((listener) => listener([...this.toasts]));
   }
 
+  private static readonly MAX_TOASTS = 3;
+
   show(options: ToastOptions) {
     const id = `toast-${++this.idCounter}`;
     const toast: ToastProps = { ...options, id };
     this.toasts.push(toast);
+    if (this.toasts.length > ToastManager.MAX_TOASTS) {
+      this.toasts = this.toasts.slice(-ToastManager.MAX_TOASTS);
+    }
     this.notify();
     return id;
   }
