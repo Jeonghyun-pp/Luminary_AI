@@ -77,7 +77,7 @@ export default function InboxPage() {
   const [aiSortedOrder, setAiSortedOrder] = useState<string[]>([]);
   const [analyzingEfficiency, setAnalyzingEfficiency] = useState(false);
   const [hasRequestedAnalysis, setHasRequestedAnalysis] = useState(false);
-  const [aiSortPrompt, setAiSortPrompt] = useState<string>("시간 투입 대비 보상이 높은 순으로 정렬");
+  const [aiSortPrompt, setAiSortPrompt] = useState<string>("나는 뷰티 인플루언서야");
   
   // Extract available categories and types from all emails (not filtered)
   const availableCategories = useMemo(() => {

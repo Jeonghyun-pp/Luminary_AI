@@ -14,7 +14,7 @@ export interface EfficiencyScore {
  */
 export async function analyzeEfficiencyBatch(
   emails: Email[],
-  analysisPrompt: string = "시간 투입 대비 보상이 높은 순으로 정렬"
+  analysisPrompt: string = "나는 뷰티 인플루언서야"
 ): Promise<Map<string, EfficiencyScore>> {
   if (emails.length === 0) {
     return new Map();

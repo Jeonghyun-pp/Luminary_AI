@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const prompt = body.prompt || "시간 투입 대비 보상이 높은 순으로 정렬";
+    const prompt = body.prompt || "나는 뷰티 인플루언서야";
 
     const userId = user.id;
     const inboxCollection = await getUserEmailCollectionRef(userId);
