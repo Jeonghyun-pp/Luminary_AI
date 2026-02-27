@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserSubcollectionRefFromResolved, db } from "@/lib/firebase";
+import { handleError } from "@/lib/errors/handler";
 
 export const dynamic = 'force-dynamic';
 
@@ -59,10 +60,7 @@ export async function DELETE(
     });
   } catch (error: any) {
     console.error("[Leave Thread] Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to leave thread" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 

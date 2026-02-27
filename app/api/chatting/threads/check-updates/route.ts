@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserSubcollectionRefFromResolved } from "@/lib/firebase";
 import { fetchThreadMessages } from "@/lib/gmail";
+import { handleError } from "@/lib/errors/handler";
 
 export const dynamic = 'force-dynamic';
 
@@ -89,10 +90,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error("[Check Updates] Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to check updates" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 

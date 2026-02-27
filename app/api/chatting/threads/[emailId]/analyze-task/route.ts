@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { openai } from "@/lib/openai";
+import { handleError } from "@/lib/errors/handler";
 
 export const dynamic = 'force-dynamic';
 
@@ -178,10 +179,7 @@ Return a JSON object with all fields:
     });
   } catch (error: any) {
     console.error("[Analyze Task] Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to analyze task" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 

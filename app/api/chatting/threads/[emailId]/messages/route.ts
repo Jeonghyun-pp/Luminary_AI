@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserSubcollectionRefFromResolved, getUserEmailCollectionRefFromResolved } from "@/lib/firebase";
+import { handleError } from "@/lib/errors/handler";
 
 export const dynamic = 'force-dynamic';
 
@@ -71,9 +72,6 @@ export async function GET(
     });
   } catch (error: any) {
     console.error("[Chatting Messages] Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch messages" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }

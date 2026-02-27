@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserSubcollectionRefFromResolved, getUserEmailCollectionRefFromResolved } from "@/lib/firebase";
 import { fetchThreadMessages } from "@/lib/gmail";
 import { FieldValue } from "firebase-admin/firestore";
+import { handleError } from "@/lib/errors/handler";
 
 export const dynamic = 'force-dynamic';
 
@@ -121,10 +122,7 @@ export async function POST(
     });
   } catch (error: any) {
     console.error("[Sync Thread] Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to sync thread" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 

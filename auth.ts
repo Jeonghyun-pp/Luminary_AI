@@ -7,7 +7,7 @@ import { verifyCredentials } from "@/lib/auth-credentials";
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: FirebaseAdapter(),
   session: {
-    strategy: "database",
+    strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   cookies: {
@@ -44,6 +44,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         params: {
           scope: "openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/calendar",
           access_type: "offline",
+          prompt: "consent",
         },
       },
       allowDangerousEmailAccountLinking: true,
@@ -53,9 +54,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async signIn({ user, account, profile }) {
       return true;
     },
-    async session({ session, user }) {
-      if (session.user && user) {
-        session.user.id = user.id;
+    async jwt({ token, user, account }) {
+      if (user) {
+        token.id = user.id;
+      }
+      if (account) {
+        token.provider = account.provider;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token?.id) {
+        session.user.id = token.id as string;
       }
       return session;
     },

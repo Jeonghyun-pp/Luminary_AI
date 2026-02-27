@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserSubcollectionRefFromResolved, getUserEmailCollectionRefFromResolved, getUserTaskCollectionRefFromResolved } from "@/lib/firebase";
 import { getThreadUnreadCount } from "@/lib/gmail";
+import { handleError } from "@/lib/errors/handler";
 
 export const dynamic = 'force-dynamic';
 
@@ -213,10 +214,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error("[Chatting Threads] Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to fetch threads" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 

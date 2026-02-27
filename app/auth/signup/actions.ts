@@ -2,6 +2,7 @@
 
 import { createUserWithPassword } from "@/lib/auth-credentials";
 import { signIn } from "@/auth";
+import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 
 export async function signUpWithCredentials(formData: FormData) {
@@ -12,9 +13,16 @@ export async function signUpWithCredentials(formData: FormData) {
   if ("error" in result) {
     redirect(`/auth/signup?error=${encodeURIComponent(result.error)}`);
   }
-  await signIn("credentials", {
-    email: result.email,
-    password,
-    redirectTo: "/inbox",
-  });
+  try {
+    await signIn("credentials", {
+      email: result.email,
+      password,
+      redirectTo: "/inbox",
+    });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      redirect(`/auth/signin?error=${error.type}`);
+    }
+    throw error;
+  }
 }

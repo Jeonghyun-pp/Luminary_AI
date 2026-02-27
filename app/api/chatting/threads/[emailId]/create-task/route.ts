@@ -4,6 +4,7 @@ import { resolveUserDocument, getUserTaskCollectionRefFromResolved, getUserEmail
 import { FieldValue } from "firebase-admin/firestore";
 import { addTaskToCalendar } from "@/lib/calendar-helper";
 import { openai } from "@/lib/openai";
+import { handleError } from "@/lib/errors/handler";
 
 export const dynamic = 'force-dynamic';
 
@@ -186,10 +187,7 @@ Return a JSON object with all fields:
     });
   } catch (error: any) {
     console.error("[Create Task from Chat] Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to create task" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 

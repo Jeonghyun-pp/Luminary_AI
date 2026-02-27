@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserSubcollectionRefFromResolved, getUserEmailCollectionRefFromResolved } from "@/lib/firebase";
 import { markThreadAsRead } from "@/lib/gmail";
+import { handleError } from "@/lib/errors/handler";
 
 export const dynamic = 'force-dynamic';
 
@@ -57,10 +58,7 @@ export async function POST(
     });
   } catch (error: any) {
     console.error("[Mark Thread Read] Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to mark thread as read" },
-      { status: 500 }
-    );
+    return handleError(error);
   }
 }
 
