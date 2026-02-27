@@ -9,9 +9,10 @@ import { redirect } from "next/navigation";
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const error = searchParams?.error;
+  const params = await searchParams;
+  const error = params?.error;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f7f7f5]">
