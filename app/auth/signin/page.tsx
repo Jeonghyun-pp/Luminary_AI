@@ -1,4 +1,4 @@
-import { signIn } from "@/auth";
+import { signInWithCredentials, signInWithGoogle } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -65,15 +65,7 @@ function SignInForm({ error }: { error?: string }) {
             </div>
           )}
 
-          <form
-            action={async (formData: FormData) => {
-              "use server";
-              const email = formData.get("email") as string;
-              const password = formData.get("password") as string;
-              await signIn("credentials", { email, password, redirectTo: "/inbox" });
-            }}
-            className="space-y-3"
-          >
+          <form action={signInWithCredentials} className="space-y-3">
             <Input name="email" type="email" placeholder="이메일" required className="h-11" />
             <Input name="password" type="password" placeholder="비밀번호" required className="h-11" />
             <Button type="submit" className="w-full" size="lg">
@@ -90,12 +82,7 @@ function SignInForm({ error }: { error?: string }) {
             </div>
           </div>
 
-          <form
-            action={async () => {
-              "use server";
-              await signIn("google", { redirectTo: "/inbox" });
-            }}
-          >
+          <form action={signInWithGoogle}>
             <Button type="submit" variant="outline" className="w-full" size="lg">
               Google로 로그인
             </Button>

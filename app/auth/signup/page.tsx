@@ -1,10 +1,8 @@
-import { createUserWithPassword } from "@/lib/auth-credentials";
-import { signIn } from "@/auth";
+import { signUpWithCredentials } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 export default async function SignUpPage({
   searchParams,
@@ -29,24 +27,7 @@ export default async function SignUpPage({
               <p className="text-sm font-semibold text-red-800">{decodeURIComponent(error)}</p>
             </div>
           )}
-          <form
-            action={async (formData: FormData) => {
-              "use server";
-              const email = formData.get("email") as string;
-              const password = formData.get("password") as string;
-              const name = formData.get("name") as string;
-              const result = await createUserWithPassword(email, password, name || undefined);
-              if ("error" in result) {
-                redirect(`/auth/signup?error=${encodeURIComponent(result.error)}`);
-              }
-              await signIn("credentials", {
-                email: result.email,
-                password,
-                redirectTo: "/inbox",
-              });
-            }}
-            className="space-y-3"
-          >
+          <form action={signUpWithCredentials} className="space-y-3">
             <Input name="email" type="email" placeholder="이메일" required className="h-11" />
             <Input name="name" type="text" placeholder="이름 (선택)" className="h-11" />
             <Input name="password" type="password" placeholder="비밀번호 (8자 이상)" required minLength={8} className="h-11" />
