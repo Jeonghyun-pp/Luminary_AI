@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserSubcollectionRefFromResolved, db } from "@/lib/firebase";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Leave a chat thread by deleting all replies for the emailId
  */

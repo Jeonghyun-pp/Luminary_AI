@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserEmailCollectionRefFromResolved } from "@/lib/firebase";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Get all trashed emails for the current user
  */

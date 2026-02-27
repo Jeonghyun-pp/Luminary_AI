@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserEmailCollectionRefFromResolved } from "@/lib/firebase";
 import { trashGmailMessage } from "@/lib/gmail";
 
+export const dynamic = 'force-dynamic';
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }

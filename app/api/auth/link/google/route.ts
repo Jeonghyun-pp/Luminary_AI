@@ -3,6 +3,8 @@ import { createLinkCookie, getGoogleOAuthLinkUrl } from "@/lib/link-google";
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {

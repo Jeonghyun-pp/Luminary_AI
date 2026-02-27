@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { db, COLLECTIONS } from "@/lib/firebase";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Force refresh Google account by deleting and requiring re-login
  * This will ensure new scopes are applied

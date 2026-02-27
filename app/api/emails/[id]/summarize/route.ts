@@ -9,6 +9,8 @@ import {
   getUserEmailCollectionRefFromResolved,
 } from "@/lib/firebase";
 
+export const dynamic = 'force-dynamic';
+
 export const POST = withErrorHandler(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }

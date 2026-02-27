@@ -7,6 +7,8 @@ import {
 import { parseSortCommand } from "@/lib/agent/parse-sort-command";
 import { withErrorHandler } from "@/lib/errors/handler";
 
+export const dynamic = 'force-dynamic';
+
 export const POST = withErrorHandler(async (request: Request) => {
   const user = await getCurrentUser();
   const { command } = await request.json();

@@ -9,6 +9,8 @@ import { withErrorHandler } from "@/lib/errors/handler";
 import { NotFoundError } from "@/lib/errors/handler";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = 'force-dynamic';
+
 export const PATCH = withErrorHandler(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }

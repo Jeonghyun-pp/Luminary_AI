@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Sidebar } from "@/components/sidebar";
 import { format } from "date-fns";
@@ -36,6 +36,14 @@ interface ChatMessage {
 }
 
 export default function ChattingPage() {
+  return (
+    <Suspense>
+      <ChattingContent />
+    </Suspense>
+  );
+}
+
+function ChattingContent() {
   const [threads, setThreads] = useState<ChatThread[]>([]);
   const [selectedThread, setSelectedThread] = useState<ChatThread | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);

@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserSubcollectionRefFromResolved, getUserEmailCollectionRefFromResolved } from "@/lib/firebase";
 import { markThreadAsRead } from "@/lib/gmail";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { emailId: string } }

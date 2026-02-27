@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserEmailCollectionRefFromResolved, db } from "@/lib/firebase";
 import { trashGmailMessage } from "@/lib/gmail";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Move all emails to trash for the current user
  */

@@ -4,6 +4,8 @@ import { resolveUserDocument, getUserSubcollectionRefFromResolved, getUserEmailC
 import { fetchThreadMessages } from "@/lib/gmail";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Background polling endpoint to sync Gmail messages to Firebase
  * This should be called every 5 seconds from the client

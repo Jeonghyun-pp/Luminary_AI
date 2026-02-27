@@ -11,6 +11,8 @@ import { withErrorHandler } from "@/lib/errors/handler";
 // Firebase Admin SDK requires Node.js runtime
 export const runtime = 'nodejs';
 
+export const dynamic = 'force-dynamic';
+
 export const GET = withErrorHandler(async (request: Request) => {
   const user = await getCurrentUser();
   const { searchParams } = new URL(request.url);

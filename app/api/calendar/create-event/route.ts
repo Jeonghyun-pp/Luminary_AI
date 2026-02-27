@@ -4,6 +4,8 @@ import { createCalendarEvent } from "@/lib/calendar";
 import { createCalendarEventSchema } from "@/lib/validations/calendar";
 import { withErrorHandler } from "@/lib/errors/handler";
 
+export const dynamic = 'force-dynamic';
+
 export const POST = withErrorHandler(async (request: Request) => {
   const user = await getCurrentUser();
   const body = await request.json();

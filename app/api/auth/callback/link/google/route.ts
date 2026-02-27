@@ -10,6 +10,8 @@ import { verifyLinkCookie } from "@/lib/link-google";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
+export const dynamic = 'force-dynamic';
+
 const COOKIE_NAME = "luminary_link_user_id";
 
 export async function GET(request: Request) {

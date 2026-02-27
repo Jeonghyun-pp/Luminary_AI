@@ -10,6 +10,9 @@ import { extractSponsorshipInfo } from "@/lib/agent/extract-sponsorship";
 import { summarizeEmailTool } from "@/lib/agent/summarize";
 import { isCollaborationRequest } from "@/lib/agent/is-collaboration";
 import { FieldValue } from "firebase-admin/firestore";
+
+export const dynamic = 'force-dynamic';
+
 // User type from Firestore
 interface FirestoreUser {
   id: string;

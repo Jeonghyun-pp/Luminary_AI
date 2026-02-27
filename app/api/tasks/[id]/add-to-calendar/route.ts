@@ -4,6 +4,8 @@ import { resolveUserDocument, getUserCalendarCollectionRefFromResolved } from "@
 import { FieldValue } from "firebase-admin/firestore";
 import { createCalendarEvent } from "@/lib/calendar";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

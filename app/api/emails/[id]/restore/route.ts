@@ -4,6 +4,8 @@ import { resolveUserDocument, getUserEmailCollectionRefFromResolved } from "@/li
 import { untrashGmailMessage } from "@/lib/gmail";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

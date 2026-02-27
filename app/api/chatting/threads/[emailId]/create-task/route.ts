@@ -5,6 +5,8 @@ import { FieldValue } from "firebase-admin/firestore";
 import { addTaskToCalendar } from "@/lib/calendar-helper";
 import { openai } from "@/lib/openai";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { emailId: string } }

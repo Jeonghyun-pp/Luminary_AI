@@ -12,6 +12,8 @@ import { summarizeEmailTool } from "@/lib/agent/summarize";
 import { isCollaborationRequest } from "@/lib/agent/is-collaboration";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = 'force-dynamic';
+
 type ProgressEvent =
   | { type: "log"; subject: string; reason: string; status: "skipped" | "accepted" }
   | { type: "summary"; success: boolean; count: number }

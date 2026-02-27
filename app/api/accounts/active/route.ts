@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { setActiveAccountId } from "@/lib/user-settings";
 import { NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {

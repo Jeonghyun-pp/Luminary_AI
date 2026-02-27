@@ -6,6 +6,8 @@ import { getUserEmailCollectionRef } from "@/lib/firebase";
 // Firebase Admin SDK requires Node.js runtime
 export const runtime = 'nodejs';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();

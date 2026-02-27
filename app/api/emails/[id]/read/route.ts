@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserEmailCollectionRefFromResolved } from "@/lib/firebase";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

@@ -5,6 +5,8 @@ import { sendGmailReply, markThreadAsRead } from "@/lib/gmail";
 import { FieldValue } from "firebase-admin/firestore";
 import { openai } from "@/lib/openai";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

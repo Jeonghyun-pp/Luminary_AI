@@ -4,6 +4,8 @@ import { resolveUserDocument, getUserSubcollectionRefFromResolved, getUserEmailC
 import { fetchThreadMessages } from "@/lib/gmail";
 import { FieldValue } from "firebase-admin/firestore";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Sync messages from Gmail thread to Firebase replies collection
  * This will fetch all messages in the thread and save them to Firebase

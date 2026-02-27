@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { resolveUserDocument, getUserSubcollectionRefFromResolved, getUserEmailCollectionRefFromResolved } from "@/lib/firebase";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Server-Sent Events endpoint for real-time message updates
  * This streams Firebase changes to the client

@@ -8,6 +8,8 @@ import {
 import { listCalendarEvents } from "@/lib/calendar";
 import { z } from "zod";
 
+export const dynamic = 'force-dynamic';
+
 const dayTasksQuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD format
 });
