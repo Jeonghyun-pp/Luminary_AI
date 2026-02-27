@@ -142,8 +142,6 @@ Return only valid JSON with fields: product, type, requirements, schedule, summa
     updatedAt: FieldValue.serverTimestamp(),
   });
 
-  console.log(`[Summarize] Updated email ${emailId} with analysis fields`);
-
   return { product, type, requirements, schedule, summary };
 }
 

@@ -29,7 +29,6 @@ export async function addTaskToCalendar(
 
     if (!existingEventSnapshot.empty) {
       // Calendar event already exists for this task, return existing ID
-      console.log(`[Add Task to Calendar] Calendar event already exists for task ${taskId}`);
       return existingEventSnapshot.docs[0].id;
     }
 
@@ -47,7 +46,6 @@ export async function addTaskToCalendar(
       });
       googleEventId = googleEvent;
     } catch (error) {
-      console.log("[Add Task to Calendar] Google Calendar not connected or failed:", error);
       // Continue to save to Firebase even if Google Calendar fails
     }
 

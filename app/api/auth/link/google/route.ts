@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.redirect(new URL("/auth/signin", request.url));
   }
-  const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
+  const baseUrl = process.env.NEXTAUTH_URL || new URL(request.url).origin;
   const redirectUri = `${baseUrl}/api/auth/callback/link/google`;
   const state = randomBytes(16).toString("hex");
   const url = getGoogleOAuthLinkUrl(redirectUri, state);

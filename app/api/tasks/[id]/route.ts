@@ -91,7 +91,6 @@ export const DELETE = withErrorHandler(async (
     if (googleEventId) {
       try {
         await deleteCalendarEvent(user.id, googleEventId);
-        console.log(`[Delete Task] Deleted Google Calendar event: ${googleEventId}`);
       } catch (error) {
         console.error(`[Delete Task] Failed to delete Google Calendar event: ${googleEventId}`, error);
         // Continue to delete from Firebase even if Google Calendar deletion fails
@@ -100,7 +99,6 @@ export const DELETE = withErrorHandler(async (
 
     // Delete from Firebase calendar collection
     await calendarDoc.ref.delete();
-    console.log(`[Delete Task] Deleted Firebase calendar event: ${calendarDoc.id}`);
   }
 
   // Delete the task

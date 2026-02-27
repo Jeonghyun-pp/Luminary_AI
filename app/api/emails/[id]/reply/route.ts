@@ -97,7 +97,6 @@ export async function POST(
     if (email.threadId) {
       try {
         await markThreadAsRead(userId, email.threadId);
-        console.log(`[Reply Email] Marked thread ${email.threadId} as read after sending reply`);
       } catch (error: any) {
         console.error(`[Reply Email] Failed to mark thread as read:`, error);
         // Don't fail the request if marking as read fails
@@ -139,7 +138,6 @@ Keep only the essential information about the product, collaboration type, or ma
             hasReplied: true, // Mark as replied
             updatedAt: FieldValue.serverTimestamp(),
           });
-          console.log(`[Reply Email] Saved subject summary and marked as replied for email ${emailId}: ${summarized}`);
         } else {
           // Even if summarization fails, mark as replied
           await inboxCollection.doc(emailId).update({

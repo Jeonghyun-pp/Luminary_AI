@@ -60,7 +60,6 @@ export const GET = withErrorHandler(async (request: Request) => {
     ? totalSnapshot.docs.filter((doc) => doc.data().accountId === activeAccountId).length
     : totalSnapshot.docs.length;
 
-  console.log("[Emails API] Returning", emails.length, "emails (total matching:", total, ")");
 
   return NextResponse.json({
     emails,

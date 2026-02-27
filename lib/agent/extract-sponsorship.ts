@@ -3,10 +3,10 @@ import { getUserEmailCollectionRef } from "@/lib/firebase";
 import { FieldValue } from "firebase-admin/firestore";
 
 export interface SponsorshipInfo {
-  reward?: string; // 보상
-  requiredContent?: string; // 요구 콘텐츠
-  deadline?: string; // 마감일자
-  description?: string; // 상세 설명
+  reward?: string;
+  requiredContent?: string;
+  deadline?: string;
+  description?: string;
 }
 
 /**
@@ -16,12 +16,10 @@ export async function extractSponsorshipInfo(
   emailId: string,
   userId: string
 ): Promise<SponsorshipInfo> {
-  console.log(`[ExtractSponsorship] Starting extraction for email: ${emailId}`);
   const inboxCollection = await getUserEmailCollectionRef(userId);
   const emailDoc = await inboxCollection.doc(emailId).get();
 
   if (!emailDoc.exists) {
-    console.error(`[ExtractSponsorship] Email not found: ${emailId}`);
     throw new Error("Email not found");
   }
 
@@ -36,8 +34,6 @@ export async function extractSponsorshipInfo(
     bodyFullText?: string;
     bodySnippet?: string;
   };
-
-  console.log(`[ExtractSponsorship] Email found: ${email.subject} from ${email.from}`);
 
   const systemPrompt = `You are a sponsorship email analysis assistant. Extract structured information from sponsorship emails.
 Extract the following information:
@@ -57,43 +53,27 @@ Body: ${email.bodyFullText || email.bodySnippet || ""}
 
 Return only valid JSON, no markdown formatting.`;
 
-  try {
-    console.log(`[ExtractSponsorship] Calling OpenAI API...`);
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
-    });
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.3,
+  });
 
-    console.log(`[ExtractSponsorship] OpenAI API response received`);
-    const content = response.choices[0].message.content;
-    if (!content) {
-      throw new Error("OpenAI API returned empty content");
-    }
-
-    console.log(`[ExtractSponsorship] Parsing JSON response...`);
-    const result = JSON.parse(content) as SponsorshipInfo;
-    console.log(`[ExtractSponsorship] Extracted info:`, result);
-
-    // Save extracted information to email document
-    await inboxCollection.doc(emailId).update({
-      sponsorshipInfo: result,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
-
-    console.log(`[ExtractSponsorship] Extraction completed successfully`);
-    return result;
-  } catch (error) {
-    console.error(`[ExtractSponsorship] Error during extraction:`, error);
-    if (error instanceof Error) {
-      console.error(`[ExtractSponsorship] Error message:`, error.message);
-      console.error(`[ExtractSponsorship] Error stack:`, error.stack);
-    }
-    throw error;
+  const content = response.choices[0].message.content;
+  if (!content) {
+    throw new Error("OpenAI API returned empty content");
   }
-}
 
+  const result = JSON.parse(content) as SponsorshipInfo;
+
+  await inboxCollection.doc(emailId).update({
+    sponsorshipInfo: result,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  return result;
+}

@@ -37,7 +37,6 @@ export async function GET(request: NextRequest) {
     try {
       googleEvents = await listCalendarEvents(user.id, date, nextDay, 100);
     } catch (error) {
-      console.log("[Day Tasks] Google Calendar not connected or failed:", error);
       // Continue even if Google Calendar fails
     }
 

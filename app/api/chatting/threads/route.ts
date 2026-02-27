@@ -189,7 +189,6 @@ export async function GET(request: NextRequest) {
                 
                 await batch.commit();
               }
-              console.log(`[Chatting Threads] Synced ${newMessages.length} new messages for thread ${thread.emailId}`);
             }
           } catch (syncError) {
             console.error(`[Chatting Threads] Failed to sync messages for thread ${thread.threadId}:`, syncError);

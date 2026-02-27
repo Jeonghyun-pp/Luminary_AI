@@ -48,13 +48,7 @@ export async function POST(
     }
 
     // Mark all messages in thread as read
-    try {
-      await markThreadAsRead(userId, threadId);
-      console.log(`[Mark Thread Read] Successfully marked thread ${threadId} as read`);
-    } catch (error: any) {
-      console.error(`[Mark Thread Read] Error marking thread ${threadId} as read:`, error);
-      throw error;
-    }
+    await markThreadAsRead(userId, threadId);
 
     return NextResponse.json({
       success: true,

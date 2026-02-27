@@ -51,7 +51,6 @@ export async function POST(
       });
       googleEventId = googleEvent;
     } catch (error) {
-      console.log("[Add to Calendar] Google Calendar not connected or failed:", error);
       // Continue to save to Firebase even if Google Calendar fails
     }
 

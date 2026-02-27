@@ -10,8 +10,6 @@ import { getActiveAccountId } from "@/lib/user-settings";
  * Uses activeAccountId from user settings when set; otherwise first Google account.
  */
 export async function getCalendarClient(userId: string, accountId?: string | null) {
-  console.log("[Calendar] Getting calendar client for userId:", userId, "accountId:", accountId ?? "(auto)");
-
   let accountDoc: DocumentSnapshot | null = null;
 
   if (accountId) {
@@ -42,22 +40,15 @@ export async function getCalendarClient(userId: string, accountId?: string | nul
   }
 
   if (!accountDoc || !accountDoc.exists) {
-    console.error("[Calendar] No Google OAuth account found for userId:", userId);
     throw new Error("No Google OAuth tokens found. Please sign in again.");
   }
 
   const account = accountDoc.data()!;
 
   if (!account?.access_token || !account?.refresh_token) {
-    console.error("[Calendar] Account found but missing tokens:", {
-      hasAccessToken: !!account?.access_token,
-      hasRefreshToken: !!account?.refresh_token,
-    });
     throw new Error("No Google OAuth tokens found. Please sign in again.");
   }
   
-  console.log("[Calendar] Account found, setting up OAuth client...");
-
   const oauth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET
@@ -70,7 +61,6 @@ export async function getCalendarClient(userId: string, accountId?: string | nul
       expiry_date: account.expires_at ? account.expires_at * 1000 : undefined,
     });
   } catch (error: any) {
-    console.error("[Calendar] Error setting credentials:", error);
     throw new Error("Failed to set OAuth credentials. Please sign in again.");
   }
 
@@ -89,20 +79,14 @@ export async function getCalendarClient(userId: string, accountId?: string | nul
 
   // Handle token refresh errors
   (oauth2Client as any).on("error", async (error: any) => {
-    console.error("[Calendar] OAuth2Client error:", error);
     if (error.message?.includes("invalid_grant") || error.code === 400) {
-      console.error("[Calendar] Invalid grant error - refresh token may be expired or revoked");
-      // Mark account as needing re-authentication by deleting tokens
       try {
         await accountDoc.ref.update({
           access_token: null,
           refresh_token: null,
           expires_at: null,
         });
-        console.log("[Calendar] Cleared invalid tokens for user:", userId);
-      } catch (updateError) {
-        console.error("[Calendar] Failed to clear tokens:", updateError);
-      }
+      } catch (_) {}
     }
   });
 

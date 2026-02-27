@@ -39,6 +39,9 @@ next-env.d.ts
 # prisma
 /prisma/migrations
 
+# Python venv
+/creait/
+
 # Google OAuth credentials
 client_secret_*.json
 credentials.json

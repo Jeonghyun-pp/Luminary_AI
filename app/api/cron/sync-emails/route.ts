@@ -103,7 +103,6 @@ export async function GET(request: Request) {
             );
 
             if (!result.isCollaboration) {
-              console.log(`[Cron] Skipping non-collaboration email: ${emailData.subject || "No subject"}`);
               return null; // Skip non-collaboration emails
             }
           } catch (error) {

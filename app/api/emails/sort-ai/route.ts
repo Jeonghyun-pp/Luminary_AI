@@ -87,11 +87,6 @@ Return a JSON object with a "sortedEmailIds" array containing all email IDs in t
       const inputEmailIds = new Set(emails.map((e: Email) => e.id));
       const sortedSet = new Set(sortedEmailIds);
       
-      // Check if all IDs are present
-      if (sortedSet.size !== inputEmailIds.size) {
-        console.warn("[AI Sort] Some email IDs are missing in sorted result");
-      }
-
       // Add any missing IDs to the end
       const missingIds = Array.from(inputEmailIds).filter(id => !sortedSet.has(id));
       const finalSortedIds = [...sortedEmailIds, ...missingIds];
@@ -102,7 +97,6 @@ Return a JSON object with a "sortedEmailIds" array containing all email IDs in t
         total: emails.length,
       });
     } catch (error: any) {
-      console.error("[AI Sort] Error:", error);
       throw error;
     }
   } catch (error: any) {

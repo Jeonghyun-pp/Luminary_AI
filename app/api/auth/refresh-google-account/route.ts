@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
 
     if (!accountSnapshot.empty) {
       await accountSnapshot.docs[0].ref.delete();
-      console.log(`[Refresh Google Account] Deleted existing Google account for user ${userId}`);
     }
 
     return NextResponse.json({

@@ -11,54 +11,31 @@ import { FieldValue } from "firebase-admin/firestore";
 export function FirebaseAdapter(): Adapter {
   return {
     async createUser(user: Omit<AdapterUser, "id">) {
-      console.log("[FirebaseAdapter] createUser called with:", {
-        email: user.email,
-        name: user.name,
-        hasEmail: !!user.email,
-      });
-      
-      console.log("[FirebaseAdapter] Creating new user in Firebase...");
-      
-      // Generate UUID to use as document ID
-      // This ensures document ID matches the user ID returned to NextAuth
       const { randomUUID } = await import("crypto");
       const userId = randomUUID();
-      
+
       const userRef = db.collection(COLLECTIONS.USERS).doc(userId);
       await userRef.set({
         ...user,
-        id: userId, // Store ID in data as well for consistency
+        id: userId,
         emailVerified: user.emailVerified?.toISOString() || null,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
-      
-      console.log("[FirebaseAdapter] User document created with ID:", userId);
+
       const userDoc = await userRef.get();
-      
+
       if (!userDoc.exists) {
-        console.error("[FirebaseAdapter] User document was not created!");
         throw new Error("Failed to create user document");
       }
-      
-      const createdUser = {
+
+      return {
         id: userId,
         ...userDoc.data(),
         emailVerified: userDoc.data()?.emailVerified
           ? new Date(userDoc.data()!.emailVerified)
           : null,
       } as AdapterUser;
-      console.log("[FirebaseAdapter] User created successfully with ID:", createdUser.id, "Email:", createdUser.email);
-      
-      // Verify the user can be retrieved immediately
-      const verifyDoc = await db.collection(COLLECTIONS.USERS).doc(userId).get();
-      if (!verifyDoc.exists) {
-        console.error("[FirebaseAdapter] WARNING: Created user cannot be retrieved immediately!");
-      } else {
-        console.log("[FirebaseAdapter] User verification: can be retrieved immediately");
-      }
-      
-      return createdUser;
     },
 
     async getUser(id: string) {
@@ -199,7 +176,6 @@ export function FirebaseAdapter(): Adapter {
           ...account,
           updatedAt: FieldValue.serverTimestamp(),
         };
-        // Google은 재로그인 시 refresh_token을 다시 주지 않으므로, 기존에 저장된 토큰 보존
         if (updateData.refresh_token == null && existingData.refresh_token != null) {
           updateData.refresh_token = existingData.refresh_token;
         }
@@ -210,28 +186,14 @@ export function FirebaseAdapter(): Adapter {
           updateData.expires_at = existingData.expires_at;
         }
         await accountDoc.ref.update(updateData);
-        console.log("[FirebaseAdapter] Account already exists, updated (tokens preserved if missing)");
         return account;
       }
-      
-      const newAccountRef = await db.collection(COLLECTIONS.ACCOUNTS).add({
+
+      await db.collection(COLLECTIONS.ACCOUNTS).add({
         ...account,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
-      const savedAccount = await newAccountRef.get();
-      if (account.provider === "google") {
-        console.log("[FirebaseAdapter] Created new Google account:", {
-          accountId: savedAccount.id,
-          userId: account.userId,
-          hasAccessToken: !!account.access_token,
-          hasRefreshToken: !!account.refresh_token,
-          accessTokenLength: account.access_token?.length || 0,
-          refreshTokenLength: account.refresh_token?.length || 0,
-          expiresAt: account.expires_at,
-          scope: account.scope,
-        });
-      }
       return account;
     },
 

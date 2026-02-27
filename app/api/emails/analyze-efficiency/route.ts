@@ -35,9 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Analyze efficiency
-    console.log(`[AnalyzeEfficiency] Starting analysis for ${emails.length} emails with prompt: ${prompt}`);
     const efficiencyMap = await analyzeEfficiencyBatch(emails, prompt);
-    console.log(`[AnalyzeEfficiency] Analysis complete, got ${efficiencyMap.size} scores`);
     
     // Convert Map to object for JSON response
     const scores: Record<string, { efficiency: number; laborEstimate: number; rewardEstimate: number }> = {};
@@ -56,7 +54,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: any) {
     console.error("[AnalyzeEfficiency] Error:", error);
-    console.error("[AnalyzeEfficiency] Error stack:", error.stack);
     return NextResponse.json(
       { 
         success: false,

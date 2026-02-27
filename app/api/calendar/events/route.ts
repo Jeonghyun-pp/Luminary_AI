@@ -33,7 +33,6 @@ export const GET = withErrorHandler(async (request: Request) => {
       validated.maxResults
     );
   } catch (error) {
-    console.log("[Calendar Events] Google Calendar not connected or failed:", error);
     // Continue to get Firebase events even if Google Calendar fails
   }
 
@@ -163,7 +162,6 @@ export const GET = withErrorHandler(async (request: Request) => {
           taskId = taskTitleDateMap.get(key) || null;
         } catch (error) {
           // Invalid date, skip matching
-          console.log("[Calendar Events] Failed to parse event date:", eventStart);
         }
       }
     }
