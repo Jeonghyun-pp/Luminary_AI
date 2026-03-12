@@ -90,6 +90,7 @@ export async function GET(request: Request) {
     provider: "google",
     type: "oauth",
     providerAccountId,
+    email: profile.email || null,
     access_token,
     refresh_token,
     expires_at,

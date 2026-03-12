@@ -6,13 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { handleSignOut } from "./actions";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, XCircle, AlertCircle, RefreshCw, User, Link2, Crown, Sparkles, Camera } from "lucide-react";
+import { CheckCircle2, User, Link2, Crown, Sparkles, Camera, Plus, Circle, Pencil, Check, X } from "lucide-react";
+// CheckCircle2 is used in subscription plans, Link2/Camera in account list
 import { toast } from "@/lib/toast";
-
-type ConnectionStatus = {
-  gmail: "connected" | "disconnected" | "error";
-  calendar: "connected" | "disconnected" | "error";
-};
 
 type LinkedAccount = {
   id: string;
@@ -20,6 +16,7 @@ type LinkedAccount = {
   providerAccountId: string;
   email?: string | null;
   scope?: string | null;
+  nickname?: string | null;
 };
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -43,19 +40,14 @@ export default function SettingsPage() {
 
 function SettingsContent() {
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState<ConnectionStatus>({
-    gmail: "disconnected",
-    calendar: "disconnected",
-  });
-  const [loading, setLoading] = useState(false);
-  const [refreshingGoogle, setRefreshingGoogle] = useState(false);
   const [userInfo, setUserInfo] = useState<{ email?: string; name?: string } | null>(null);
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
   const [activeAccountId, setActiveAccountIdState] = useState<string | null>(null);
   const [settingActive, setSettingActive] = useState(false);
+  const [editingNicknameId, setEditingNicknameId] = useState<string | null>(null);
+  const [nicknameInput, setNicknameInput] = useState("");
 
   useEffect(() => {
-    checkConnections();
     fetchUserInfo();
     fetchAccounts();
   }, []);
@@ -82,6 +74,29 @@ function SettingsContent() {
     }
   };
 
+  const saveNickname = async (accountId: string, nickname: string) => {
+    try {
+      const res = await fetch("/api/accounts/nickname", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId, nickname: nickname || null }),
+      });
+      if (res.ok) {
+        setLinkedAccounts((prev) =>
+          prev.map((acc) =>
+            acc.id === accountId ? { ...acc, nickname: nickname || null } : acc
+          )
+        );
+        toast.success("별명이 저장되었습니다.");
+      } else {
+        toast.error("별명 저장에 실패했습니다.");
+      }
+    } catch {
+      toast.error("별명 저장에 실패했습니다.");
+    }
+    setEditingNicknameId(null);
+  };
+
   const setActiveAccount = async (accountId: string | null) => {
     setSettingActive(true);
     try {
@@ -92,7 +107,7 @@ function SettingsContent() {
       });
       if (res.ok) {
         setActiveAccountIdState(accountId);
-        toast.success(accountId ? "활성 계정이 변경되었습니다." : "활성 계정이 해제되었습니다.");
+        toast.success(accountId ? "계정이 변경되었습니다." : "계정이 해제되었습니다.");
       } else {
         toast.error("활성 계정 변경에 실패했습니다.");
       }
@@ -120,92 +135,6 @@ function SettingsContent() {
     }
   };
 
-  const checkConnections = async () => {
-    setLoading(true);
-    try {
-      // Check Gmail connection
-      try {
-        const gmailRes = await fetch("/api/emails?limit=1");
-        if (gmailRes.ok) {
-          setStatus((prev) => ({ ...prev, gmail: "connected" }));
-        } else {
-          setStatus((prev) => ({ ...prev, gmail: "error" }));
-        }
-      } catch {
-        setStatus((prev) => ({ ...prev, gmail: "disconnected" }));
-      }
-
-      // Check Calendar connection
-      try {
-        const calendarRes = await fetch("/api/calendar/events?maxResults=1");
-        if (calendarRes.ok) {
-          setStatus((prev) => ({ ...prev, calendar: "connected" }));
-        } else {
-          setStatus((prev) => ({ ...prev, calendar: "error" }));
-        }
-      } catch {
-        setStatus((prev) => ({ ...prev, calendar: "disconnected" }));
-      }
-    } catch (error) {
-      console.error("Failed to check connections:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "connected":
-      case "configured":
-        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-      case "error":
-        return <XCircle className="h-5 w-5 text-red-500" />;
-      default:
-        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "connected":
-        return "연결됨";
-      case "configured":
-        return "설정됨";
-      case "error":
-        return "오류";
-      default:
-        return "연결 안 됨";
-    }
-  };
-
-  const handleRefreshGoogleAccount = async () => {
-    if (!confirm("Google 계정을 재연결하시겠습니까? 로그아웃 후 다시 로그인해야 합니다.")) {
-      return;
-    }
-
-    setRefreshingGoogle(true);
-    try {
-      const res = await fetch("/api/auth/refresh-google-account", {
-        method: "POST",
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        toast.success("Google 계정이 삭제되었습니다. 로그아웃 후 다시 로그인해주세요.");
-        // Redirect to sign out after a short delay
-        setTimeout(() => {
-          handleSignOut();
-        }, 2000);
-      } else {
-        toast.error(data.error || "Google 계정 재연결 실패");
-      }
-    } catch (error) {
-      console.error("Failed to refresh Google account:", error);
-      toast.error("Google 계정 재연결 실패");
-    } finally {
-      setRefreshingGoogle(false);
-    }
-  };
-
   return (
     <div className="flex h-screen">
       <Sidebar />
@@ -217,79 +146,11 @@ function SettingsContent() {
           </div>
 
           <div className="space-y-6">
-            {/* Connection Status */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>연동 상태</CardTitle>
-                    <CardDescription>
-                      서비스 연동 상태를 확인하고 관리하세요
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={checkConnections}
-                    disabled={loading}
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-                    새로고침
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Gmail */}
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(status.gmail)}
-                    <div>
-                      <div className="font-medium">Gmail</div>
-                      <div className="text-sm text-gray-500">
-                        이메일 동기화
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm font-medium">
-                      {getStatusText(status.gmail)}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRefreshGoogleAccount}
-                      disabled={refreshingGoogle}
-                      title="새로운 권한을 적용하기 위해 Google 계정을 재연결합니다"
-                    >
-                      <Link2 className={`h-4 w-4 mr-1 ${refreshingGoogle ? "animate-spin" : ""}`} />
-                      재연결
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Google Calendar */}
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(status.calendar)}
-                    <div>
-                      <div className="font-medium">Google Calendar</div>
-                      <div className="text-sm text-gray-500">
-                        일정 관리
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-sm font-medium">
-                    {getStatusText(status.calendar)}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Account Settings */}
             <Card>
               <CardHeader>
                 <CardTitle>계정</CardTitle>
-                <CardDescription>계정 설정을 관리하세요. 연동된 계정을 선택하면 해당 계정의 Inbox, Chatting, Task가 표시됩니다.</CardDescription>
+                <CardDescription>Google 계정을 추가하고 전환하세요. 선택된 계정의 Inbox, Chatting, Task가 표시됩니다.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {userInfo && (
@@ -304,46 +165,116 @@ function SettingsContent() {
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-700">연동 계정 (활성 계정 선택)</div>
+                <div className="space-y-3">
+                  <div className="text-sm font-medium text-gray-700">연결된 계정</div>
                   {linkedAccounts.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">연동된 계정이 없습니다. Google을 연동하면 Gmail·캘린더를 사용할 수 있습니다.</p>
+                    <p className="text-sm text-muted-foreground">연결된 계정이 없습니다. Google 계정을 추가하면 Gmail과 캘린더를 사용할 수 있습니다.</p>
                   ) : (
                     <ul className="space-y-2">
-                      {linkedAccounts.map((acc) => (
-                        <li key={acc.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            {acc.provider === "google" ? (
-                              <GoogleIcon className="h-5 w-5" />
-                            ) : acc.provider === "instagram" ? (
-                              <Camera className="h-5 w-5 text-pink-500" />
-                            ) : (
-                              <Link2 className="h-5 w-5 text-gray-500" />
-                            )}
-                            <div>
-                              <span className="font-medium capitalize">{acc.provider}</span>
-                              {acc.email && <span className="text-sm text-muted-foreground ml-2">({acc.email})</span>}
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant={activeAccountId === acc.id ? "default" : "outline"}
-                            size="sm"
-                            disabled={settingActive}
-                            onClick={() => setActiveAccount(activeAccountId === acc.id ? null : acc.id)}
+                      {linkedAccounts.map((acc) => {
+                        const isActive = activeAccountId === acc.id;
+                        const isEditing = editingNicknameId === acc.id;
+                        const displayName = acc.nickname || acc.email || acc.providerAccountId;
+                        return (
+                          <li
+                            key={acc.id}
+                            className={`flex items-center gap-3 p-4 border rounded-lg transition-colors ${
+                              isActive
+                                ? "border-blue-500 bg-blue-50"
+                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            } ${settingActive ? "opacity-50 pointer-events-none" : ""}`}
                           >
-                            {activeAccountId === acc.id ? "활성" : "선택"}
-                          </Button>
-                        </li>
-                      ))}
+                            <div
+                              className="flex-shrink-0 cursor-pointer"
+                              onClick={() => setActiveAccount(isActive ? null : acc.id)}
+                            >
+                              {isActive ? (
+                                <div className="h-5 w-5 rounded-full border-2 border-blue-500 bg-blue-500 flex items-center justify-center">
+                                  <div className="h-2 w-2 rounded-full bg-white" />
+                                </div>
+                              ) : (
+                                <Circle className="h-5 w-5 text-gray-300" />
+                              )}
+                            </div>
+                            <div className="flex-shrink-0">
+                              {acc.provider === "google" ? (
+                                <GoogleIcon className="h-5 w-5" />
+                              ) : acc.provider === "instagram" ? (
+                                <Camera className="h-5 w-5 text-pink-500" />
+                              ) : (
+                                <Link2 className="h-5 w-5 text-gray-500" />
+                              )}
+                            </div>
+                            <div
+                              className="flex-1 min-w-0 cursor-pointer"
+                              onClick={() => setActiveAccount(isActive ? null : acc.id)}
+                            >
+                              {isEditing ? (
+                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                  <input
+                                    type="text"
+                                    className="flex-1 text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    value={nicknameInput}
+                                    onChange={(e) => setNicknameInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") saveNickname(acc.id, nicknameInput);
+                                      if (e.key === "Escape") setEditingNicknameId(null);
+                                    }}
+                                    autoFocus
+                                    placeholder={acc.email || acc.providerAccountId}
+                                  />
+                                  <button
+                                    className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                    onClick={() => saveNickname(acc.id, nicknameInput)}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                                    onClick={() => setEditingNicknameId(null)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="font-medium text-gray-900 truncate flex items-center gap-1.5">
+                                    {displayName}
+                                    <button
+                                      className="p-0.5 text-gray-400 hover:text-gray-600 rounded"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingNicknameId(acc.id);
+                                        setNicknameInput(acc.nickname || "");
+                                      }}
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                  <div className="text-xs text-gray-500">{acc.email || acc.providerAccountId}</div>
+                                </>
+                              )}
+                            </div>
+                            {isActive && !isEditing && (
+                              <span className="flex-shrink-0 text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                                사용 중
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-2 pt-1">
                     <Button variant="outline" size="sm" asChild>
-                      <a href="/api/auth/link/google">Google 연동</a>
+                      <a href="/api/auth/link/google" className="flex items-center gap-1.5">
+                        <Plus className="h-4 w-4" />
+                        Google 계정 추가
+                      </a>
                     </Button>
                     <Button variant="outline" size="sm" disabled title="준비 중">
-                      Instagram 연동 (준비 중)
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      Instagram (준비 중)
                     </Button>
                   </div>
                 </div>

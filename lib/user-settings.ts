@@ -7,6 +7,7 @@ export type LinkedAccount = {
   providerAccountId: string;
   email?: string | null;
   scope?: string | null;
+  nickname?: string | null;
 };
 
 /**
@@ -49,6 +50,20 @@ export async function getLinkedAccounts(userId: string): Promise<LinkedAccount[]
       providerAccountId: data.providerAccountId as string,
       email: data.email as string | undefined,
       scope: data.scope as string | undefined,
+      nickname: (data.nickname as string | undefined) || null,
     };
+  });
+}
+
+/**
+ * Update the nickname for a linked account.
+ */
+export async function setAccountNickname(
+  accountId: string,
+  nickname: string | null
+): Promise<void> {
+  await db.collection(COLLECTIONS.ACCOUNTS).doc(accountId).update({
+    nickname: nickname,
+    updatedAt: FieldValue.serverTimestamp(),
   });
 }
