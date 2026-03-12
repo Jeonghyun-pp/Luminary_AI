@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const error = searchParams.get("error");
-  const baseUrl = process.env.NEXTAUTH_URL || new URL(request.url).origin;
+  const baseUrl = new URL(request.url).origin;
   const redirectUri = `${baseUrl}/api/auth/callback/link/google`;
 
   if (error) {
